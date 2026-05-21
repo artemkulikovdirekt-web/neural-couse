@@ -85,6 +85,29 @@
         }
         .music-btn:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.1); }
 
+        #orientation-lock {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 32px;
+            background: #111;
+            color: #00f3ff;
+            font-family: 'Rajdhani', 'Inter', sans-serif;
+            font-size: clamp(1.4rem, 6vw, 3rem);
+            font-weight: 300;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px cyan, 0 0 24px rgba(0, 243, 255, 0.45);
+        }
+        @media (orientation: portrait) and (max-width: 900px) {
+            #orientation-lock { display: flex; }
+            body { overflow: hidden; }
+        }
+
         /* --- Главный экран запуска --- */
         #start-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -241,6 +264,8 @@
 </head>
 <body>
 
+    <div id="orientation-lock">Пожалуйста, переверните устройство</div>
+
     <div id="bg-image"></div>
     <div class="grid-bg"></div>
 
@@ -354,7 +379,7 @@
         const BGM_STATE_KEY = 'courseBgMusicState';
         const BGM_VOLUME = 0.25;
         const savedMusicState = loadMusicState();
-        let currentTrackIdx = Number.isInteger(savedMusicState.trackIdx) ? savedMusicState.trackIdx : 0;
+        let currentTrackIdx = Number.isInteger(savedMusicState.trackIdx) ? savedMusicState.trackIdx % playlist.length : 0;
         let bgMusic = new Audio(playlist[currentTrackIdx]);
         let resumeMusicAfterVideo = false;
         let resumeMusicAfterModuleMedia = false;
@@ -401,6 +426,7 @@
         function nextTrack() {
             currentTrackIdx = (currentTrackIdx + 1) % playlist.length;
             bgMusic.src = playlist[currentTrackIdx];
+            bgMusic.currentTime = 0;
             bgMusic.volume = BGM_VOLUME;
             bgMusic.play().catch(e => console.log("Файл музыки не найден в папке"));
             updateTrackNameDisplay();

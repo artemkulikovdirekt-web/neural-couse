@@ -28,6 +28,29 @@
             overflow-y: auto;
         }
 
+        #orientation-lock {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 32px;
+            background: #111;
+            color: #00f3ff;
+            font-family: 'Rajdhani', 'Inter', sans-serif;
+            font-size: clamp(1.4rem, 6vw, 3rem);
+            font-weight: 300;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px cyan, 0 0 24px rgba(0, 243, 255, 0.45);
+        }
+        @media (orientation: portrait) and (max-width: 900px) {
+            #orientation-lock { display: flex; }
+            body { overflow: hidden; }
+        }
+
         .grid-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-image: 
@@ -166,6 +189,8 @@
 </head>
 <body>
 
+    <div id="orientation-lock">Пожалуйста, переверните устройство</div>
+
     <div class="grid-bg"></div>
 
     <div class="module-container">
@@ -184,11 +209,11 @@
             <div class="comparison-grid">
                 <div class="video-box interactive-btn" onclick="togglePlay(this)">
                     <div class="video-label label-bad">Галлюцинации и морфинг</div>
-                    <video data-src="vid-bad-morph.mp4" preload="none" loop muted playsinline></video>
+                    <video src="vid-bad-morph.mp4" preload="metadata" loop muted playsinline></video>
                 </div>
                 <div class="video-box interactive-btn" onclick="togglePlay(this)">
                     <div class="video-label label-good">Стабильная физика</div>
-                    <video data-src="vid-good-physics.mp4" preload="none" loop muted playsinline></video>
+                    <video src="vid-good-physics.mp4" preload="metadata" loop muted playsinline></video>
                 </div>
             </div>
             <p class="loft-text" style="font-size: 0.9rem; color: var(--text-muted); text-align: center;">Кликните по панелям, чтобы воспроизвести/поставить на паузу.</p>
@@ -210,7 +235,7 @@
             
             <div class="director-grid">
                 <div class="main-player">
-                    <video id="director-video" data-src="" preload="none" loop muted playsinline></video>
+                    <video id="director-video" src="cam-tracking.mp4" preload="metadata" loop muted playsinline></video>
                 </div>
 
                 <div class="controls-panel">
@@ -400,55 +425,19 @@
                 btn.addEventListener('mousedown', playClickSound);
             });
 
-            // Выбираем первый режим без автозапуска видео.
             document.getElementById('btn-tracking').classList.add('active');
-            document.getElementById('director-video').dataset.src = cameraVideos.tracking;
+            const directorVideo = document.getElementById('director-video');
+            directorVideo.src = cameraVideos.tracking;
+            directorVideo.load();
         });
 
         // --- ЛОГИКА СРАВНЕНИЯ ВИДЕО ---
-        function prepareLazyVideo(video) {
-            if (!video.src && video.dataset.src) {
-                video.src = video.dataset.src;
-                video.load();
-            }
-        }
-
-        function playWhenReady(video) {
-            prepareLazyVideo(video);
-
-            if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                return video.play();
-            }
-
-            return new Promise((resolve, reject) => {
-                const onReady = () => {
-                    cleanup();
-                    video.play().then(resolve).catch(reject);
-                };
-                const onError = () => {
-                    cleanup();
-                    reject(new Error('Видео не загрузилось'));
-                };
-                const cleanup = () => {
-                    video.removeEventListener('loadeddata', onReady);
-                    video.removeEventListener('canplay', onReady);
-                    video.removeEventListener('error', onError);
-                };
-
-                video.addEventListener('loadeddata', onReady, { once: true });
-                video.addEventListener('canplay', onReady, { once: true });
-                video.addEventListener('error', onError, { once: true });
-            });
-        }
-
         function togglePlay(boxElement) {
             const video = boxElement.querySelector('video');
             if (!video) return;
             
             if (video.paused) {
-                boxElement.style.borderColor = 'rgba(0, 243, 255, 0.5)';
-                boxElement.style.boxShadow = '0 0 20px rgba(0, 243, 255, 0.2)';
-                playWhenReady(video).catch(e => console.log("Файл видео не найден"));
+                video.play().catch(() => console.log('Видео не найдено'));
                 boxElement.style.borderColor = 'rgba(0, 243, 255, 0.5)';
                 boxElement.style.boxShadow = '0 0 20px rgba(0, 243, 255, 0.2)';
             } else {
@@ -471,11 +460,12 @@
             
             setTimeout(() => {
                 videoElement.pause();
-                videoElement.removeAttribute('src');
+                videoElement.src = cameraVideos[camKey];
                 videoElement.load();
-                videoElement.dataset.src = cameraVideos[camKey];
-                playWhenReady(videoElement).catch(e => console.log("Файл для пульта не найден"));
-                videoElement.style.opacity = '1';
+                videoElement.addEventListener('loadeddata', () => {
+                    videoElement.style.opacity = '1';
+                    videoElement.play().catch(() => console.log('Видео не найдено'));
+                }, { once: true });
             }, 300);
         }
 
