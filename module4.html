@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Модуль 4: Синтез времени и пространства</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --bg-base: #030407;
+            --loft-card-bg: rgba(20, 24, 33, 0.6);
+            --neon-teal: #00f3ff;
+            --neon-teal-dim: rgba(0, 243, 255, 0.15);
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --border-loft: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; min-height: 100vh;
+            background-color: var(--bg-base);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex; justify-content: center; align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1; pointer-events: none;
+        }
+
+        .module-container {
+            width: 100%; max-width: 1100px; padding: 50px 20px; z-index: 10;
+        }
+
+        .module-main-title {
+            font-family: 'Rajdhani', sans-serif; font-size: 2.8rem; color: #fff;
+            margin: 0 0 40px 0; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            border-left: 4px solid var(--neon-teal); padding-left: 20px;
+        }
+
+        .loft-block {
+            background: var(--loft-card-bg); border: var(--border-loft);
+            border-radius: 6px; padding: 35px; margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        }
+        .loft-block-title {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 600;
+            color: var(--neon-teal); text-transform: uppercase;
+            letter-spacing: 2px; margin-top: 0; margin-bottom: 20px;
+        }
+        .loft-text {
+            font-weight: 300; line-height: 1.7; color: #cbd5e1; font-size: 1.1rem; margin: 0 0 15px 0;
+        }
+        .loft-text:last-child { margin-bottom: 0; }
+        .highlight { color: #fff; font-weight: 500; border-bottom: 1px solid var(--neon-teal); }
+
+        /* ИНТЕРАКТИВНЫЕ ВИДЖЕТЫ */
+        .widget-container {
+            border: 1px solid rgba(0, 243, 255, 0.3); background: rgba(10, 11, 16, 0.95);
+            border-radius: 6px; padding: 40px; margin-bottom: 40px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+        .widget-header {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; font-weight: 600;
+            color: #fff; text-transform: uppercase; letter-spacing: 2px;
+            margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        /* БЛОК СРАВНЕНИЯ ВИДЕО */
+        .comparison-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;
+        }
+        @media(max-width: 800px) { .comparison-grid { grid-template-columns: 1fr; } }
+        
+        .video-box {
+            background: #040508; border: 1px solid #1e293b; border-radius: 6px;
+            overflow: hidden; position: relative; cursor: pointer; transition: 0.3s;
+        }
+        .video-box video {
+            width: 100%; height: 250px; object-fit: cover; display: block;
+        }
+        .video-label {
+            position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.1); padding: 5px 10px; border-radius: 4px;
+            font-family: 'Fira Code', monospace; font-size: 0.85rem; color: #fff; backdrop-filter: blur(5px);
+            z-index: 2;
+        }
+        .label-bad { border-color: rgba(255, 0, 0, 0.4); color: #ff6b6b; }
+        .label-good { border-color: rgba(0, 243, 255, 0.4); color: var(--neon-teal); }
+
+        /* РЕЖИССЕРСКИЙ ПУЛЬТ */
+        .director-grid {
+            display: grid; grid-template-columns: 1fr 300px; gap: 30px;
+        }
+        @media(max-width: 800px) { .director-grid { grid-template-columns: 1fr; } }
+
+        .main-player {
+            width: 100%; height: 400px; background: #040508; border: 1px solid #1e293b;
+            border-radius: 6px; position: relative; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .main-player video {
+            width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease;
+            position: relative; z-index: 2;
+        }
+
+        .controls-panel { display: flex; flex-direction: column; gap: 15px; }
+        
+        .cam-btn {
+            background: #090b11; border: 1px solid #1e293b; color: #cbd5e1;
+            padding: 20px; border-radius: 6px; cursor: pointer; text-align: left;
+            transition: 0.3s; position: relative; overflow: hidden; font-family: 'Inter', sans-serif;
+        }
+        .cam-btn::before {
+            content: ''; position: absolute; left: 0; top: 0; width: 4px; height: 100%;
+            background: transparent; transition: 0.3s;
+        }
+        .cam-btn:hover { background: #131824; color: #fff; }
+        .cam-btn.active { background: var(--neon-teal-dim); color: #fff; border-color: rgba(0, 243, 255, 0.3); }
+        .cam-btn.active::before { background: var(--neon-teal); box-shadow: 0 0 10px var(--neon-teal); }
+        
+        .cam-title { font-size: 1.1rem; font-weight: 500; margin-bottom: 8px; color: #fff; }
+        .cam-desc { font-size: 0.9rem; color: #64748b; line-height: 1.4; font-weight: 300; }
+        .cam-tag { 
+            display: inline-block; margin-top: 10px; padding: 4px 8px; background: rgba(255,255,255,0.05); 
+            border-radius: 4px; font-family: 'Fira Code', monospace; font-size: 0.8rem; color: var(--neon-teal);
+        }
+
+        .module-back-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0 20px;
+        }
+        .module-back-btn {
+            font-family: 'Rajdhani', sans-serif;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 300;
+            color: var(--neon-teal);
+            background: rgba(0, 243, 255, 0.04);
+            border: 1px solid rgba(0, 243, 255, 0.28);
+            border-radius: 6px;
+            padding: 16px 46px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.04);
+        }
+        .module-back-btn:hover {
+            color: #030407;
+            background: var(--neon-teal);
+            border-color: var(--neon-teal);
+            box-shadow: 0 0 24px rgba(0, 243, 255, 0.45);
+            transform: translateY(-3px);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="module-container">
+        <h1 class="module-main-title">MOD_04: Синтез видео</h1>
+
+        <div class="loft-block">
+            <h3 class="loft-block-title">Видео — это не просто картинки в ряд</h3>
+            <p class="loft-text">Генерация видео — самая ресурсоемкая и сложная задача для ИИ. Если нейросеть просто нарисует 24 картинки для одной секунды видео, опираясь только на промпт, мы получим неконтролируемое слайд-шоу. Каждый следующий кадр будет отличаться от предыдущего: у персонажа поменяется одежда, цвет глаз, а фон превратится в кашу.</p>
+            <p class="loft-text">Современные видео-модели не просто генерируют пиксели. Они <b>рассчитывают физику 3D-пространства</b>. Модель понимает, что если человек поворачивает голову, за его затылком должен быть фон, который был там кадр назад. Она понимает гравитацию, отражения в зеркалах и свойства материалов.</p>
+        </div>
+
+        <div class="widget-container">
+            <h3 class="widget-header">Проблема темпоральной консистентности</h3>
+            <p class="loft-text" style="margin-bottom: 25px;">Темпоральная консистентность — это способность нейросети сохранять объекты неизменными во времени. В ранних моделях объекты плавились (морфинг) из-за потери контекста между кадрами. Нажмите на видео, чтобы запустить сравнение.</p>
+            
+            <div class="comparison-grid">
+                <div class="video-box interactive-btn" onclick="togglePlay(this)">
+                    <div class="video-label label-bad">Галлюцинации и морфинг</div>
+                    <video src="vid-bad-morph.mp4" loop muted playsinline></video>
+                </div>
+                <div class="video-box interactive-btn" onclick="togglePlay(this)">
+                    <div class="video-label label-good">Стабильная физика</div>
+                    <video src="vid-good-physics.mp4" loop muted playsinline></video>
+                </div>
+            </div>
+            <p class="loft-text" style="font-size: 0.9rem; color: var(--text-muted); text-align: center;">Кликните по панелям, чтобы воспроизвести/поставить на паузу.</p>
+        </div>
+
+        <div class="loft-block" style="border-color: rgba(0, 243, 255, 0.3);">
+            <h3 class="loft-block-title">Режиссерский язык промптов</h3>
+            <p class="loft-text">Если при генерации изображений мы описываем детали объекта, то в видеосетях мы <b>руководим виртуальным оператором</b>. Качество генерации зависит от того, насколько точно вы зададите параметры съемки.</p>
+            <p class="loft-text">Профессиональный видео-промпт состоит из четырех слоев:
+            <br>1. <b>Объект и действие:</b> Кто и что делает (строго в Present Continuous).
+            <br>2. <b>Параметры камеры:</b> Тип объектива (35mm, Macro, Fisheye), освещение (Cinematic lighting, Golden hour).
+            <br>3. <b>Движение камеры:</b> Как камера ведет себя в пространстве. Без этого параметра видео будет скучным и статичным.
+            <br>4. <b>Посекундная раскадровка:</b> Использование таймлайнов прямо в запросе. Вы можете жестко прописывать смену планов по секундам (например, 0s-2s: крупный план лица, 2s-5s: резкое отдаление камеры). Это дает полный режиссерский контроль над хронометражем.</p>
+        </div>
+
+        <div class="widget-container" style="border-color: rgba(0, 243, 255, 0.3);">
+            <h3 class="widget-header">Управление камерой</h3>
+            <p class="loft-text" style="margin-bottom: 25px;">Выбор движения камеры кардинально меняет восприятие сцены. Переключайте режимы справа, чтобы увидеть, как отрабатывают конкретные теги в промпте.</p>
+            
+            <div class="director-grid">
+                <div class="main-player">
+                    <video id="director-video" src="" loop muted playsinline></video>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="cam-btn interactive-btn" id="btn-tracking" onclick="setCamera('tracking', this)">
+                        <div class="cam-title">Tracking Shot</div>
+                        <div class="cam-desc">Камера плавно следует за движущимся объектом, удерживая его в центре кадра.</div>
+                        <div class="cam-tag">--camera follow, tracking shot</div>
+                    </div>
+                    
+                    <div class="cam-btn interactive-btn" id="btn-drone" onclick="setCamera('drone', this)">
+                        <div class="cam-title">FPV Drone Flythrough</div>
+                        <div class="cam-desc">Динамичный пролет через узкие пространства или над локацией на высокой скорости.</div>
+                        <div class="cam-tag">--camera flythrough, fpv drone</div>
+                    </div>
+                    
+                    <div class="cam-btn interactive-btn" id="btn-macro" onclick="setCamera('macro', this)">
+                        <div class="cam-title">Static Macro & Bokeh</div>
+                        <div class="cam-desc">Статичная камера с сильным размытием фона. Фокус на мельчайших деталях и микро-движениях.</div>
+                        <div class="cam-tag">--camera static, macro, bokeh</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-back-wrap">
+            <a class="module-back-btn interactive-btn" href="index.html?fromModule=1" onclick="return goBackToModules()">Вернуться к основным модулям</a>
+        </div>
+    </div>
+
+    <script>
+        const BGM_PLAYLIST = ['track1.mp3', 'track2.mp3', 'track3.mp3', 'track4.mp3'];
+        const BGM_STATE_KEY = 'courseBgMusicState';
+        const IS_EMBEDDED_MODULE = new URLSearchParams(window.location.search).get('embedded') === '1';
+        const BGM_VOLUME = 0.25;
+        const bgSavedState = (() => {
+            try { return JSON.parse(localStorage.getItem(BGM_STATE_KEY)) || {}; }
+            catch (e) { return {}; }
+        })();
+        let bgTrackIdx = Number.isInteger(bgSavedState.trackIdx) ? bgSavedState.trackIdx : 0;
+        let bgMusic = new Audio(BGM_PLAYLIST[bgTrackIdx] || BGM_PLAYLIST[0]);
+        let bgResumeAfterMedia = false;
+
+        bgMusic.volume = BGM_VOLUME;
+        bgMusic.muted = !!bgSavedState.muted;
+        if (Number.isFinite(bgSavedState.currentTime)) {
+            bgMusic.addEventListener('loadedmetadata', () => {
+                if (bgSavedState.currentTime < bgMusic.duration) bgMusic.currentTime = bgSavedState.currentTime;
+            }, { once: true });
+        }
+
+        function goBackToModules() {
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:close-module' }, '*');
+                return false;
+            }
+            return true;
+        }
+
+        function saveBgMusicState() {
+            localStorage.setItem(BGM_STATE_KEY, JSON.stringify({
+                trackIdx: bgTrackIdx,
+                currentTime: bgMusic.currentTime || 0,
+                muted: bgMusic.muted,
+                paused: bgMusic.paused
+            }));
+        }
+
+        function playBgMusic() {
+            if (IS_EMBEDDED_MODULE) return;
+            bgMusic.volume = BGM_VOLUME;
+            bgMusic.play().catch(() => {
+                document.addEventListener('click', playBgMusic, { once: true });
+            });
+        }
+
+        function nextBgTrack() {
+            bgTrackIdx = (bgTrackIdx + 1) % BGM_PLAYLIST.length;
+            bgMusic.src = BGM_PLAYLIST[bgTrackIdx];
+            bgMusic.currentTime = 0;
+            playBgMusic();
+            saveBgMusicState();
+        }
+
+        function pauseBgMusicForMedia() {
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-pause' }, '*');
+                return;
+            }
+            bgResumeAfterMedia = !bgMusic.paused;
+            bgMusic.pause();
+            saveBgMusicState();
+        }
+
+        function hasActiveMedia() {
+            return Array.from(document.querySelectorAll('audio, video')).some(media => !media.paused && !media.ended);
+        }
+
+        function resumeBgMusicAfterMedia() {
+            if (hasActiveMedia()) return;
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-resume' }, '*');
+                return;
+            }
+            if (bgResumeAfterMedia) playBgMusic();
+            bgResumeAfterMedia = false;
+            saveBgMusicState();
+        }
+
+        function bindBgMusicMediaGuards() {
+            document.querySelectorAll('audio, video').forEach(media => {
+                media.addEventListener('play', pauseBgMusicForMedia);
+                media.addEventListener('ended', () => setTimeout(resumeBgMusicAfterMedia, 0));
+                media.addEventListener('pause', () => setTimeout(resumeBgMusicAfterMedia, 0));
+            });
+        }
+
+        bgMusic.addEventListener('ended', nextBgTrack);
+        window.addEventListener('beforeunload', saveBgMusicState);
+        document.addEventListener('DOMContentLoaded', () => {
+            bindBgMusicMediaGuards();
+            if (!IS_EMBEDDED_MODULE && !bgSavedState.paused) playBgMusic();
+        });
+    </script>
+
+    <script>
+        // =========================================================================
+        // АССЕТЫ: УКАЖИ НАЗВАНИЯ СВОИХ ВИДЕОФАЙЛОВ ДЛЯ РЕЖИССЕРСКОГО ПУЛЬТА
+        // =========================================================================
+        const cameraVideos = {
+            'tracking': 'cam-tracking.mp4', 
+            'drone': 'cam-drone.mp4',       
+            'macro': 'cam-macro.mp4'        
+        };
+
+        // --- АУДИО ДВИЖОК СИСТЕМЫ ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx, noiseBuffer; 
+
+        function initSysAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+                const bufferSize = audioCtx.sampleRate * 0.05; 
+                noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playHoverSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + 0.01);
+            gain.gain.setValueAtTime(0.005, audioCtx.currentTime); 
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.01);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        function playClickSound() {
+            if (!audioCtx) initSysAudio();
+            if (!noiseBuffer) return;
+            const noise = audioCtx.createBufferSource();
+            const noiseGain = audioCtx.createGain();
+            noise.buffer = noiseBuffer;
+            noiseGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.005);
+            noise.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.01);
+            oscGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.01);
+            osc.connect(oscGain); oscGain.connect(audioCtx.destination);
+            noise.start(); osc.start(); osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('click', initSysAudio, { once: true });
+            document.querySelectorAll('.interactive-btn').forEach(btn => {
+                btn.addEventListener('mouseenter', playHoverSound);
+                btn.addEventListener('mousedown', playClickSound);
+            });
+
+            // Выбираем первый режим без автозапуска видео.
+            document.getElementById('btn-tracking').classList.add('active');
+            document.getElementById('director-video').src = cameraVideos.tracking;
+        });
+
+        // --- ЛОГИКА СРАВНЕНИЯ ВИДЕО ---
+        function togglePlay(boxElement) {
+            const video = boxElement.querySelector('video');
+            if (!video) return;
+            
+            if (video.paused) {
+                video.play().catch(e => console.log("Файл видео не найден"));
+                boxElement.style.borderColor = 'rgba(0, 243, 255, 0.5)';
+                boxElement.style.boxShadow = '0 0 20px rgba(0, 243, 255, 0.2)';
+            } else {
+                video.pause();
+                boxElement.style.borderColor = '#1e293b';
+                boxElement.style.boxShadow = 'none';
+            }
+        }
+
+        // --- ЛОГИКА РЕЖИССЕРСКОГО ПУЛЬТА ---
+        function setCamera(camKey, btnElement) {
+            // Сброс кнопок
+            document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            const videoElement = document.getElementById('director-video');
+            
+            // Эффект затухания
+            videoElement.style.opacity = '0';
+            
+            setTimeout(() => {
+                videoElement.src = cameraVideos[camKey];
+                videoElement.play().catch(e => console.log("Файл для пульта не найден"));
+                videoElement.style.opacity = '1';
+            }, 300);
+        }
+
+    </script>
+</body>
+</html>

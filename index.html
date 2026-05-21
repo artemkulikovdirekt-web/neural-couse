@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Training App - Ultra Edition (Main Hub)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Rajdhani:wght@500;600;700&display=swap');
+
+        :root {
+            --bg-base: #030407;
+            --panel-bg: rgba(12, 14, 20, 0.7);
+            --neon-teal: #00f3ff;
+            --neon-teal-dim: rgba(0, 243, 255, 0.2);
+            --neon-purple: #a64aff;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --border-thin: 1px solid rgba(255, 255, 255, 0.05);
+            --border-teal: 1px solid rgba(0, 243, 255, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            /* Объемный градиент для всего приложения (будет виден после скрытия картинки) */
+            background: radial-gradient(circle at 50% 0%, #1a1f2e 0%, #030407 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+        }
+        
+        /* Картинка для первого экрана (теперь z-index: 0, чтобы быть поверх градиента body) */
+        #bg-image {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url('bg.jpg') center/cover no-repeat; 
+            z-index: 0; 
+            transition: opacity 0.8s ease;
+        }
+        
+        /* Сетка для дашборда */
+        .grid-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1; /* Сетка поверх картинки и фона */
+            transform: perspective(500px) rotateX(60deg) translateY(-100px) scale(3);
+            animation: gridMove 20s linear infinite;
+            opacity: 0; 
+            transition: opacity 1s ease;
+        }
+
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 50px; }
+        }
+
+        /* --- МУЗЫКАЛЬНЫЙ ПЛЕЕР (ВЕРХНЯЯ ПАНЕЛЬ) --- */
+        #music-player-ui {
+            position: fixed; top: 25px; right: 30px; z-index: 1000;
+            display: none;
+            background: rgba(10, 11, 16, 0.8);
+            border: var(--border-teal); border-radius: 6px;
+            padding: 10px 20px; align-items: center; gap: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0, 243, 255, 0.1);
+        }
+        .music-info { display: flex; flex-direction: column; }
+        .music-label {
+            font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; color: var(--neon-teal);
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 2px;
+        }
+        .music-track-name { font-family: 'Fira Code', monospace; font-size: 0.9rem; color: #fff; }
+        .music-controls { display: flex; gap: 15px; align-items: center; }
+        .music-btn {
+            background: none; border: none; color: var(--text-muted);
+            font-size: 1.3rem; cursor: pointer; transition: 0.3s; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .music-btn:hover { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.1); }
+
+        /* --- Главный экран запуска --- */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; 
+            z-index: 100;
+            background: #030407 url('bg.jpg') center/cover no-repeat;
+            transition: opacity 0.8s ease;
+            padding: 40px;
+        }
+
+        #start-screen-top-info {
+            position: absolute; top: 40px; left: 40px;
+            font-family: 'Rajdhani', sans-serif; font-size: 0.88rem; font-weight: 300;
+            color: rgba(0, 243, 255, 0.82); text-transform: uppercase; letter-spacing: 2.6px;
+            text-align: left; line-height: 1.65;
+            background: rgba(3, 4, 7, 0.72);
+            border-left: 2px solid rgba(0, 243, 255, 0.55);
+            padding: 14px 18px;
+            box-shadow: 0 0 24px rgba(0, 243, 255, 0.08);
+        }
+
+        #start-screen-bottom-container {
+            position: absolute; bottom: 40px; left: 40px;
+            display: flex; flex-direction: column; align-items: flex-start;
+        }
+
+        #start-screen-framed-content {
+            border: var(--border-teal); border-radius: 8px;
+            padding: 20px 30px;
+            background: #030407; margin-bottom: 20px;
+        }
+
+        .menu-title { 
+            font-family: 'Rajdhani', sans-serif; font-size: 2rem; font-weight: 600; 
+            text-transform: uppercase; letter-spacing: 4px; 
+            color: #fff; margin: 0; text-shadow: 0 0 15px var(--neon-teal-dim);
+        }
+        
+        .btn-premium {
+            font-family: 'Rajdhani', sans-serif; padding: 16px 48px; font-size: 1.2rem; cursor: pointer;
+            background: rgba(0, 243, 255, 0.03); color: var(--neon-teal);
+            border: 1px solid rgba(0, 243, 255, 0.2); border-radius: 4px; 
+            text-transform: uppercase; letter-spacing: 3px; transition: all 0.3s;
+            position: relative; overflow: hidden; align-self: flex-start; 
+        }
+        .btn-premium::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 243, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn-premium:hover { 
+            background: rgba(0, 243, 255, 0.1); border: var(--border-teal);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.15), inset 0 0 10px rgba(0, 243, 255, 0.1);
+            transform: scale(1.05);
+        }
+        .btn-premium:hover::before { left: 150%; }
+
+        /* --- Сетка модулей --- */
+        #dashboard {
+            display: none; width: 90%; height: 85%; max-width: 1200px;
+            background: var(--panel-bg); backdrop-filter: blur(20px) saturate(150%);
+            border: var(--border-thin); border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+            padding: 40px; box-sizing: border-box; z-index: 10; flex-direction: column;
+            opacity: 0; transform: scale(0.95); transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .dashboard-header {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; color: #fff;
+            margin-bottom: 30px; text-transform: uppercase; letter-spacing: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .modules-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 24px; width: 100%; height: 100%;
+        }
+        
+        .module-card {
+            background: rgba(255,255,255,0.015); border: var(--border-thin);
+            border-radius: 8px; padding: 25px; cursor: pointer; 
+            display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; overflow: hidden; transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .module-card::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 0%; height: 1px;
+            background: var(--neon-teal); transition: width 0.4s ease;
+        }
+        .module-card:hover:not(.locked) { 
+            background: rgba(0, 243, 255, 0.03); border-color: rgba(0, 243, 255, 0.3);
+            transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .module-card:hover:not(.locked)::after { width: 100%; }
+
+        .module-card.locked {
+            opacity: 0.3; cursor: default; filter: grayscale(100%);
+            background: rgba(0,0,0,0.2); pointer-events: none;
+        }
+
+        .module-num { 
+            font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;
+        }
+        .module-title { font-size: 1.2rem; font-weight: 300; color: #fff; line-height: 1.4; }
+
+        #module-viewer {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 900;
+            background: var(--bg-base);
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+        #module-frame {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
+            background: var(--bg-base);
+        }
+
+        /* --- Видеоплеер --- */
+        #fullscreen-video-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000; z-index: 9999;
+        }
+        #fullscreen-video-overlay video { width: 100%; height: 100%; object-fit: contain; }
+        .skip-btn {
+            position: absolute; top: 30px; right: 30px; z-index: 10000;
+            background: rgba(0,0,0,0.5); border: var(--border-thin);
+            color: var(--text-muted); padding: 10px 20px; border-radius: 4px; 
+            cursor: pointer; font-family: 'Rajdhani', sans-serif; text-transform: uppercase;
+            letter-spacing: 2px; backdrop-filter: blur(5px); transition: 0.3s;
+        }
+        .skip-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+
+    </style>
+</head>
+<body>
+
+    <div id="bg-image"></div>
+    <div class="grid-bg"></div>
+
+    <div id="music-player-ui">
+        <div class="music-info">
+            <div class="music-label">BGM.SYSTEM</div>
+            <div class="music-track-name" id="track-name-display">track_01.mp3</div>
+        </div>
+        <div class="music-controls">
+            <button class="music-btn interactive-btn" onclick="toggleMute()" id="mute-btn" title="Вкл/Выкл звук">🔊</button>
+            <button class="music-btn interactive-btn" onclick="nextTrack()" title="Следующий трек">⏭</button>
+        </div>
+    </div>
+
+    <div id="start-screen">
+        <div id="start-screen-top-info">
+            СИСТЕМА КУРСА ЗАГРУЖЕНА...<br>
+            ОБНОВЛЕНИЕ ДАННЫХ: 2026-05-18...<br>
+            ВЕРСИЯ: Ultra.Ed_v05...<br>
+            СТАТУС: ОЖИДАНИЕ ВВОДА...
+        </div>
+
+        <div id="start-screen-bottom-container">
+            <div id="start-screen-framed-content">
+                <div class="menu-title">Нейросети: Погружение</div>
+            </div>
+            <button class="btn-premium interactive-btn" onclick="initCourse()">Инициализация</button>
+        </div>
+    </div>
+
+    <div id="dashboard">
+        <div class="dashboard-header">
+            <span>Учебные модули</span>
+            <span style="font-size: 1rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">ВЫБЕРИТЕ БЛОК ДЛЯ ЗАГРУЗКИ</span>
+        </div>
+        <div class="modules-grid" id="modules-grid"></div>
+    </div>
+
+    <div id="module-viewer">
+        <iframe id="module-frame" title="Учебный модуль"></iframe>
+    </div>
+
+    <div id="fullscreen-video-overlay">
+        <button class="skip-btn interactive-btn" onclick="closeVideo()">Пропуск -></button>
+        <video id="fs-video" playsinline>
+            <source src="" type="video/mp4">
+        </video>
+    </div>
+
+    <script>
+        // --- АУДИО ДВИЖОК ДЛЯ ИНТЕРФЕЙСА ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        let noiseBuffer; 
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+                const bufferSize = audioCtx.sampleRate * 0.05; 
+                noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playHoverSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1500, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.01);
+            gain.gain.setValueAtTime(0.01, audioCtx.currentTime); 
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.01);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        function playClickSound() {
+            if (!audioCtx || !noiseBuffer) return;
+            const noise = audioCtx.createBufferSource();
+            const noiseGain = audioCtx.createGain();
+            noise.buffer = noiseBuffer;
+            noiseGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.005);
+            noise.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+            
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.01);
+            oscGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.01);
+            osc.connect(oscGain); oscGain.connect(audioCtx.destination);
+            
+            noise.start(); osc.start(); osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        function bindAudioEvents() {
+            document.querySelectorAll('.interactive-btn').forEach(btn => {
+                btn.addEventListener('mouseenter', playHoverSound);
+                btn.addEventListener('mousedown', playClickSound);
+            });
+        }
+
+        // --- ЛОГИКА ФОНОВОЙ МУЗЫКИ ---
+        const playlist = ['track1.mp3', 'track2.mp3', 'track3.mp3', 'track4.mp3'];
+        const BGM_STATE_KEY = 'courseBgMusicState';
+        const BGM_VOLUME = 0.25;
+        const savedMusicState = loadMusicState();
+        let currentTrackIdx = Number.isInteger(savedMusicState.trackIdx) ? savedMusicState.trackIdx : 0;
+        let bgMusic = new Audio(playlist[currentTrackIdx]);
+        let resumeMusicAfterVideo = false;
+        let resumeMusicAfterModuleMedia = false;
+        let moduleResumeTimer = null;
+        bgMusic.volume = BGM_VOLUME; // Громкость снижена на 50%
+        bgMusic.muted = !!savedMusicState.muted;
+        if (Number.isFinite(savedMusicState.currentTime)) {
+            bgMusic.addEventListener('loadedmetadata', () => {
+                if (savedMusicState.currentTime < bgMusic.duration) {
+                    bgMusic.currentTime = savedMusicState.currentTime;
+                }
+            }, { once: true });
+        }
+
+        // Слушатель: когда трек заканчивается, включаем следующий
+        bgMusic.addEventListener('ended', nextTrack);
+        window.addEventListener('beforeunload', saveMusicState);
+
+        function loadMusicState() {
+            try {
+                return JSON.parse(localStorage.getItem(BGM_STATE_KEY)) || {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveMusicState() {
+            localStorage.setItem(BGM_STATE_KEY, JSON.stringify({
+                trackIdx: currentTrackIdx,
+                currentTime: bgMusic.currentTime || 0,
+                muted: bgMusic.muted,
+                paused: bgMusic.paused
+            }));
+        }
+
+        function startPlaylist() {
+            document.getElementById('music-player-ui').style.display = 'flex';
+            bgMusic.volume = BGM_VOLUME;
+            bgMusic.play().catch(e => console.log("Файл музыки не найден в папке"));
+            updateTrackNameDisplay();
+            saveMusicState();
+        }
+
+        function nextTrack() {
+            currentTrackIdx = (currentTrackIdx + 1) % playlist.length;
+            bgMusic.src = playlist[currentTrackIdx];
+            bgMusic.volume = BGM_VOLUME;
+            bgMusic.play().catch(e => console.log("Файл музыки не найден в папке"));
+            updateTrackNameDisplay();
+            saveMusicState();
+        }
+
+        function toggleMute() {
+            bgMusic.muted = !bgMusic.muted;
+            document.getElementById('mute-btn').innerText = bgMusic.muted ? '🔇' : '🔊';
+            saveMusicState();
+        }
+
+        function updateTrackNameDisplay() {
+            document.getElementById('track-name-display').innerText = `track_0${currentTrackIdx + 1}.mp3`;
+        }
+
+        function pauseBgMusicForModuleMedia() {
+            clearTimeout(moduleResumeTimer);
+            resumeMusicAfterModuleMedia = !bgMusic.paused;
+            bgMusic.pause();
+            saveMusicState();
+        }
+
+        function resumeBgMusicFromModuleMedia() {
+            clearTimeout(moduleResumeTimer);
+            moduleResumeTimer = setTimeout(() => {
+                if (resumeMusicAfterModuleMedia) {
+                    startPlaylist();
+                }
+                resumeMusicAfterModuleMedia = false;
+                saveMusicState();
+            }, 250);
+        }
+
+        // --- ДАННЫЕ И ЛОГИКА КУРСА ---
+        const modulesData = [
+            { id: 1, title: "Архитектура LLM" },
+            { id: 2, title: "Генеративная графика" },
+            { id: 3, title: "Синтез аудио" },
+            { id: 4, title: "Синтез видео" },
+            { id: 5, title: "Vibe Coding & Архитектура" },
+            { id: 6, title: "Практикум: Babylon.js" }
+        ];
+
+        // Все модули разблокированы для свободного доступа
+        let progress = 6; 
+
+        function initCourse() {
+            initAudio(); 
+            playClickSound();
+            
+            const startScreen = document.getElementById('start-screen');
+            const bgImage = document.getElementById('bg-image');
+            
+            startScreen.style.opacity = '0';
+            bgImage.style.opacity = '0'; // Убираем картинку фона
+
+            setTimeout(() => {
+                startScreen.style.display = 'none';
+                bgImage.style.display = 'none'; // Полностью скрываем фон с картинкой
+                document.querySelector('.grid-bg').style.opacity = '0.15';
+                
+                // Запускаем видео, а после него - музыку и дашборд
+                playVideo('video1.mp4', () => {
+                    showDashboard();
+                    startPlaylist(); // Включаем музыку после стартового видео
+                });
+            }, 800);
+        }
+
+        function showDashboard() {
+            const dashboard = document.getElementById('dashboard');
+            dashboard.style.display = 'flex';
+            
+            setTimeout(() => {
+                dashboard.style.opacity = '1';
+                dashboard.style.transform = 'scale(1)';
+            }, 50);
+
+            const grid = document.getElementById('modules-grid');
+            grid.innerHTML = '';
+
+            modulesData.forEach((m, index) => {
+                const isLocked = index > progress;
+                const card = document.createElement('div');
+                card.className = `module-card interactive-btn ${isLocked ? 'locked' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="module-num">Модуль 0${m.id}</div>
+                    <div class="module-title">${m.title}</div>
+                `;
+
+                if (!isLocked) {
+                    card.onclick = () => {
+                        playClickSound();
+                        setTimeout(() => {
+                            openModule(m.id);
+                        }, 200);
+                    };
+                    card.onmouseenter = playHoverSound;
+                }
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function openModule(moduleId) {
+            const dashboard = document.getElementById('dashboard');
+            const viewer = document.getElementById('module-viewer');
+            const frame = document.getElementById('module-frame');
+
+            dashboard.style.opacity = '0';
+            dashboard.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                dashboard.style.display = 'none';
+                frame.src = `module${moduleId}.html?embedded=1`;
+                viewer.style.display = 'block';
+                requestAnimationFrame(() => {
+                    viewer.style.opacity = '1';
+                });
+            }, 250);
+        }
+
+        function closeModule() {
+            const dashboard = document.getElementById('dashboard');
+            const viewer = document.getElementById('module-viewer');
+            const frame = document.getElementById('module-frame');
+
+            viewer.style.opacity = '0';
+            setTimeout(() => {
+                frame.src = 'about:blank';
+                viewer.style.display = 'none';
+                dashboard.style.display = 'flex';
+                requestAnimationFrame(() => {
+                    dashboard.style.opacity = '1';
+                    dashboard.style.transform = 'scale(1)';
+                });
+                clearTimeout(moduleResumeTimer);
+                resumeBgMusicFromModuleMedia();
+            }, 300);
+        }
+
+        window.closeModule = closeModule;
+
+        window.addEventListener('message', (event) => {
+            if (!event.data || typeof event.data !== 'object') return;
+
+            if (event.data.type === 'course:close-module') {
+                closeModule();
+            }
+            if (event.data.type === 'course:bgm-pause') {
+                pauseBgMusicForModuleMedia();
+            }
+            if (event.data.type === 'course:bgm-resume') {
+                resumeBgMusicFromModuleMedia();
+            }
+        });
+
+        // --- ЛОГИКА ВИДЕО ---
+        let videoCallback = null;
+
+        function playVideo(src, onComplete) {
+            videoCallback = onComplete;
+            const overlay = document.getElementById('fullscreen-video-overlay');
+            const video = document.getElementById('fs-video');
+            
+            document.getElementById('dashboard').style.opacity = '0';
+            document.getElementById('music-player-ui').style.display = 'none';
+            resumeMusicAfterVideo = !bgMusic.paused;
+            bgMusic.pause();
+            
+            setTimeout(() => {
+                overlay.style.display = 'block';
+                video.src = src;
+                
+                let playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        video.muted = true;
+                        video.play();
+                    });
+                }
+            }, 400);
+
+            video.onended = closeVideo;
+        }
+
+        function closeVideo() {
+            const overlay = document.getElementById('fullscreen-video-overlay');
+            const video = document.getElementById('fs-video');
+            
+            video.pause();
+            video.currentTime = 0;
+            overlay.style.display = 'none';
+            if (resumeMusicAfterVideo) {
+                startPlaylist();
+            }
+            resumeMusicAfterVideo = false;
+            
+            if (videoCallback) {
+                videoCallback();
+                videoCallback = null;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            bindAudioEvents();
+
+            if (new URLSearchParams(window.location.search).get('fromModule') === '1') {
+                initAudio();
+                document.getElementById('start-screen').style.display = 'none';
+                document.getElementById('bg-image').style.display = 'none';
+                document.querySelector('.grid-bg').style.opacity = '0.15';
+                showDashboard();
+                startPlaylist();
+                history.replaceState(null, '', 'index.html');
+            }
+        });
+    </script>
+</body>
+</html>

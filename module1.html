@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Модуль 1: Архитектура LLM</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --bg-base: #030407;
+            --loft-card-bg: rgba(20, 24, 33, 0.6);
+            --neon-teal: #00f3ff;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --border-loft: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; min-height: 100vh;
+            background-color: var(--bg-base);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex; justify-content: center; align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        /* Фоновая сетка */
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Контейнер модуля */
+        .module-container {
+            width: 100%; max-width: 1000px;
+            padding: 40px 20px;
+            z-index: 10;
+        }
+
+        .module-main-title {
+            font-family: 'Rajdhani', sans-serif; font-size: 2.5rem; color: #fff;
+            margin: 0 0 30px 0; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+            border-left: 4px solid var(--neon-teal); padding-left: 20px;
+        }
+
+        /* --- СТИЛИЗАЦИЯ DARK LOFT --- */
+        .loft-block {
+            background: var(--loft-card-bg);
+            border: var(--border-loft);
+            border-radius: 6px;
+            padding: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        .loft-block-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.5rem; font-weight: 600;
+            color: var(--neon-teal); text-transform: uppercase;
+            letter-spacing: 2px; margin-top: 0; margin-bottom: 20px;
+        }
+        .loft-text {
+            font-weight: 300; line-height: 1.7; color: #cbd5e1; font-size: 1.1rem; margin: 0 0 15px 0;
+        }
+        .loft-text:last-child { margin-bottom: 0; }
+        
+        /* Сетка сравнения */
+        .loft-columns {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px;
+        }
+        .column-card {
+            background: rgba(15, 18, 25, 0.8); border: var(--border-loft);
+            border-radius: 6px; padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .column-card-title {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 600;
+            color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; margin-bottom: 20px;
+        }
+        .list-item {
+            margin-bottom: 15px; font-size: 1rem; line-height: 1.6; font-weight: 300;
+        }
+        .list-item strong { font-weight: 600; }
+        .pro-item { color: #a7f3d0; }
+        .con-item { color: #fca5a5; }
+
+        /* Конструктор промптов */
+        .constructor-container {
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            background: rgba(10, 11, 16, 0.95);
+            border-radius: 6px; padding: 40px; margin-bottom: 40px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+        .constructor-header {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; font-weight: 600;
+            color: #fff; text-transform: uppercase; letter-spacing: 2px;
+            margin-top: 0; margin-bottom: 15px;
+        }
+        
+        /* Панель тумблеров */
+        .switches-panel {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;
+        }
+        .switch-box {
+            background: rgba(255,255,255,0.02); border: var(--border-loft);
+            padding: 20px; border-radius: 6px; display: flex; align-items: center;
+            justify-content: space-between; cursor: pointer; transition: all 0.2s;
+        }
+        .switch-box:hover {
+            background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2);
+        }
+        .switch-label {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; transition: color 0.2s;
+        }
+        .switch-label.active { color: var(--neon-teal); }
+        
+        /* Кастомный тумблер */
+        .loft-toggle {
+            position: relative; width: 50px; height: 26px;
+            -webkit-appearance: none; background: #1e293b;
+            outline: none; border-radius: 13px; cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+            margin: 0;
+        }
+        .loft-toggle::before {
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 20px; height: 20px; border-radius: 50%; background: #64748b;
+            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .loft-toggle:checked {
+            background: var(--neon-teal); box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+        }
+        .loft-toggle:checked::before {
+            left: 27px; background: #030407;
+        }
+
+        /* Терминалы */
+        .terminal-grid {
+            display: flex; flex-direction: column; gap: 25px;
+        }
+        .terminal-block {
+            background: #040508; border: 1px solid #1e293b; border-radius: 6px;
+            padding: 25px; position: relative;
+            /* Высота подстраивается под контент автоматически */
+        }
+        .terminal-label {
+            position: absolute; top: -12px; left: 20px; background: #0a0b10;
+            padding: 0 10px; font-family: 'Rajdhani', sans-serif; font-size: 0.9rem;
+            letter-spacing: 1px; color: var(--text-muted); font-weight: 600;
+        }
+        .terminal-content {
+            font-family: 'Fira Code', monospace; font-size: 1.05rem; margin: 0;
+            white-space: pre-wrap; line-height: 1.7; min-height: 20px;
+        }
+        #prompt-output { color: #94a3b8; }
+        #prompt-output .added-token { color: var(--neon-teal); font-weight: 500; }
+        #ai-output { color: #f1f5f9; transition: opacity 0.15s ease-in-out; }
+
+        .module-back-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0 20px;
+        }
+        .module-back-btn {
+            font-family: 'Rajdhani', sans-serif;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 300;
+            color: var(--neon-teal);
+            background: rgba(0, 243, 255, 0.04);
+            border: 1px solid rgba(0, 243, 255, 0.28);
+            border-radius: 6px;
+            padding: 16px 46px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.04);
+        }
+        .module-back-btn:hover {
+            color: #030407;
+            background: var(--neon-teal);
+            border-color: var(--neon-teal);
+            box-shadow: 0 0 24px rgba(0, 243, 255, 0.45);
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="module-container">
+        <h1 class="module-main-title">MOD_01: Архитектура LLM</h1>
+
+        <div class="loft-block">
+            <h3 class="loft-block-title">Что такое LLM и как это работает?</h3>
+            <p class="loft-text">Если говорить простым языком, <b>LLM (Large Language Model)</b> — это большая языковая модель. Представь себе невероятно начитанного собеседника, который изучил миллиарды текстов в интернете: книги, статьи, форумы и код.</p>
+            <p class="loft-text">Когда ты задаешь вопрос ChatGPT или Claude, они не лезут в поисковик, чтобы найти готовый ответ. Они генерируют его прямо на ходу. В основе их работы лежит сложный математический алгоритм, который <b>предсказывает каждое следующее слово</b> на основе твоего запроса. Точно по такому же принципу работают и нейросети для генерации картинок: они шаг за шагом вычисляют, каким должен быть следующий пиксель, чтобы получился нужный тебе рисунок.</p>
+        </div>
+
+        <div class="loft-columns">
+            <div class="column-card">
+                <h4 class="column-card-title">1. Прямые подписки</h4>
+                <p class="loft-text" style="font-size: 0.95rem; margin-bottom: 15px;">Оплата доступа напрямую разработчику (например, официальный сайт ChatGPT или Anthropic).</p>
+                <div class="list-item pro-item"><strong>+ Самые новые функции:</strong> Ты первым получаешь доступ к обновлениям (анализ файлов, голосовой режим, свежие версии моделей).</div>
+                <div class="list-item pro-item"><strong>+ Максимальные лимиты:</strong> Разработчики дают больше всего запросов именно прямым подписчикам.</div>
+                <div class="list-item con-item"><strong>- Дорого:</strong> Если тебе для работы нужны и ChatGPT, и Claude, и Midjourney, придется покупать три разные подписки, что бьет по карману.</div>
+            </div>
+            <div class="column-card">
+                <h4 class="column-card-title">2. Платформы-Агрегаторы</h4>
+                <p class="loft-text" style="font-size: 0.95rem; margin-bottom: 15px;">Сервисы-комбайны (например, Poe, Monica, Chathub), объединяющие много сетей.</p>
+                <div class="list-item pro-item"><strong>+ Все в одном месте:</strong> Платишь за одну подписку и можешь переключаться между ChatGPT, Claude и Gemini в одном окне.</div>
+                <div class="list-item pro-item"><strong>+ Удобство тестов:</strong> Можно отправить один и тот же запрос сразу трем разным нейросетям и выбрать лучший ответ.</div>
+                <div class="list-item con-item"><strong>- Урезанные лимиты:</strong> Запросы к самым мощным и тяжелым моделям часто ограничены сильнее, чем при прямой покупке.</div>
+            </div>
+        </div>
+
+        <div class="loft-block">
+            <h3 class="loft-block-title">Что такое промпт?</h3>
+            <p class="loft-text"><b>Промпт</b> (от англ. prompt) — это твой запрос, команда или инструкция для нейросети. Чем точнее и детальнее ты опишешь задачу, тем качественнее будет результат. Общение с ИИ похоже на работу с толковым, но неопытным помощником: скажешь просто «сделай нормально» — получишь непредсказуемый результат. Дашь четкую роль, формат и строгие рамки — получишь идеальное выполнение задачи с первого раза.</p>
+        </div>
+
+        <div class="constructor-container">
+            <h3 class="constructor-header">Конструктор промпта</h3>
+            <p class="loft-text" style="margin-bottom: 30px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 25px;">
+                Этот интерактивный блок наглядно показывает, как качество промпта влияет на итоговый результат. Пощелкай тумблеры и посмотри, как базовый, скучный ответ нейросети превращается в структурированный и полезный материал при добавлении правильного контекста.
+            </p>
+            
+            <div class="switches-panel">
+                <label class="switch-box interactive-btn">
+                    <span class="switch-label" id="lbl-t1">Роль</span>
+                    <input type="checkbox" id="t1" class="loft-toggle">
+                </label>
+                <label class="switch-box interactive-btn">
+                    <span class="switch-label" id="lbl-t2">Формат</span>
+                    <input type="checkbox" id="t2" class="loft-toggle">
+                </label>
+                <label class="switch-box interactive-btn">
+                    <span class="switch-label" id="lbl-t3">Ограничения</span>
+                    <input type="checkbox" id="t3" class="loft-toggle">
+                </label>
+            </div>
+
+            <div class="terminal-grid">
+                <div class="terminal-block">
+                    <div class="terminal-label">[ЗАПРОС ПОЛЬЗОВАТЕЛЯ]</div>
+                    <div class="terminal-content" id="prompt-output">Что мне сегодня приготовить на ужин?</div>
+                </div>
+                <div class="terminal-block">
+                    <div class="terminal-label">[ОТВЕТ ИИ]</div>
+                    <div class="terminal-content" id="ai-output">Можете приготовить пасту с курицей в сливочном соусе. Это простое и вкусное блюдо, которое не займет много времени. Также подойдет запеченная курица с картошкой или классический мясной гуляш с пюре.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-back-wrap">
+            <a class="module-back-btn interactive-btn" href="index.html?fromModule=1" onclick="return goBackToModules()">Вернуться к основным модулям</a>
+        </div>
+    </div>
+
+    <script>
+        const BGM_PLAYLIST = ['track1.mp3', 'track2.mp3', 'track3.mp3', 'track4.mp3'];
+        const BGM_STATE_KEY = 'courseBgMusicState';
+        const IS_EMBEDDED_MODULE = new URLSearchParams(window.location.search).get('embedded') === '1';
+        const BGM_VOLUME = 0.25;
+        const bgSavedState = (() => {
+            try { return JSON.parse(localStorage.getItem(BGM_STATE_KEY)) || {}; }
+            catch (e) { return {}; }
+        })();
+        let bgTrackIdx = Number.isInteger(bgSavedState.trackIdx) ? bgSavedState.trackIdx : 0;
+        let bgMusic = new Audio(BGM_PLAYLIST[bgTrackIdx] || BGM_PLAYLIST[0]);
+        let bgResumeAfterMedia = false;
+
+        bgMusic.volume = BGM_VOLUME;
+        bgMusic.muted = !!bgSavedState.muted;
+        if (Number.isFinite(bgSavedState.currentTime)) {
+            bgMusic.addEventListener('loadedmetadata', () => {
+                if (bgSavedState.currentTime < bgMusic.duration) bgMusic.currentTime = bgSavedState.currentTime;
+            }, { once: true });
+        }
+
+        function goBackToModules() {
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:close-module' }, '*');
+                return false;
+            }
+            return true;
+        }
+
+        function saveBgMusicState() {
+            localStorage.setItem(BGM_STATE_KEY, JSON.stringify({
+                trackIdx: bgTrackIdx,
+                currentTime: bgMusic.currentTime || 0,
+                muted: bgMusic.muted,
+                paused: bgMusic.paused
+            }));
+        }
+
+        function playBgMusic() {
+            if (IS_EMBEDDED_MODULE) return;
+            bgMusic.volume = BGM_VOLUME;
+            bgMusic.play().catch(() => {
+                document.addEventListener('click', playBgMusic, { once: true });
+            });
+        }
+
+        function nextBgTrack() {
+            bgTrackIdx = (bgTrackIdx + 1) % BGM_PLAYLIST.length;
+            bgMusic.src = BGM_PLAYLIST[bgTrackIdx];
+            bgMusic.currentTime = 0;
+            playBgMusic();
+            saveBgMusicState();
+        }
+
+        function pauseBgMusicForMedia() {
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-pause' }, '*');
+                return;
+            }
+            bgResumeAfterMedia = !bgMusic.paused;
+            bgMusic.pause();
+            saveBgMusicState();
+        }
+
+        function hasActiveMedia() {
+            return Array.from(document.querySelectorAll('audio, video')).some(media => !media.paused && !media.ended);
+        }
+
+        function resumeBgMusicAfterMedia() {
+            if (hasActiveMedia()) return;
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-resume' }, '*');
+                return;
+            }
+            if (bgResumeAfterMedia) playBgMusic();
+            bgResumeAfterMedia = false;
+            saveBgMusicState();
+        }
+
+        function bindBgMusicMediaGuards() {
+            document.querySelectorAll('audio, video').forEach(media => {
+                media.addEventListener('play', pauseBgMusicForMedia);
+                media.addEventListener('ended', () => setTimeout(resumeBgMusicAfterMedia, 0));
+                media.addEventListener('pause', () => setTimeout(resumeBgMusicAfterMedia, 0));
+            });
+        }
+
+        bgMusic.addEventListener('ended', nextBgTrack);
+        window.addEventListener('beforeunload', saveBgMusicState);
+        document.addEventListener('DOMContentLoaded', () => {
+            bindBgMusicMediaGuards();
+            if (!IS_EMBEDDED_MODULE && !bgSavedState.paused) playBgMusic();
+        });
+    </script>
+
+    <script>
+        // --- АУДИО ДВИЖОК ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+        let noiseBuffer; 
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+                const bufferSize = audioCtx.sampleRate * 0.05; 
+                noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playHoverSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + 0.01);
+            gain.gain.setValueAtTime(0.008, audioCtx.currentTime); 
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.01);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        function playClickSound() {
+            if (!audioCtx) initAudio();
+            if (!noiseBuffer) return;
+            
+            const noise = audioCtx.createBufferSource();
+            const noiseGain = audioCtx.createGain();
+            noise.buffer = noiseBuffer;
+            noiseGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.005);
+            noise.connect(noiseGain);
+            noiseGain.connect(audioCtx.destination);
+            
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.01);
+            oscGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.01);
+            
+            osc.connect(oscGain);
+            oscGain.connect(audioCtx.destination);
+            
+            noise.start();
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('click', initAudio, { once: true });
+            document.querySelectorAll('.interactive-btn').forEach(btn => {
+                btn.addEventListener('mouseenter', playHoverSound);
+            });
+            // Инициализация при загрузке
+            updateLoftConstructor();
+        });
+
+        // --- ЛОГИКА КОНСТРУКТОРА ПРОМПТА ---
+        const aiMatrix = {
+            '000': `Можете приготовить пасту с курицей в сливочном соусе. Это простое и вкусное блюдо, которое не займет много времени. Также подойдет запеченная курица с картошкой или классический мясной гуляш с пюре.`,
+            '100': `Приветствую! Сегодня мы можем создать нечто потрясающее. Рекомендую приготовить филе миньон прожарки medium rare с гарниром из спаржи на гриле и насыщенным соусом демиглас. Не забудьте добавить веточку свежего розмарина и каплю трюфельного масла для полного раскрытия аромата. Приятного вечера!`,
+            '010': `**Паста с курицей и грибами**\n*Ингредиенты:* Куриное филе (300 г), спагетти (200 г), шампиньоны (150 г), сливки 20% (150 мл).\n*Шаг 1 (0:00 - 0:10):* Поставьте воду для спагетти. Нарежьте филе кубиками, а грибы слайсами.\n*Шаг 2 (0:10 - 0:20):* Отварите спагетти. Одновременно обжарьте курицу и грибы на сковороде до золотистого цвета.\n*Шаг 3 (0:20 - 0:25):* Влейте сливки в сковороду, потушите 3 минуты на слабом огне и смешайте с готовой пастой.`,
+            '001': `Если бюджет ограничен, купите в "Пятерочке" пачку недорогих макарон, куриный фарш по акции и томатную пасту. Обжарьте фарш с луком на сковородке, добавьте ложку томатной пасты для вкуса, отварите макароны и всё перемешайте. Получится огромная сковородка сытных макарон по-флотски, которой хватит на всю семью за копейки.`,
+            '110': `**Утиная грудка магре с ягодным соусом**\n*Ингредиенты:* Утиная грудка (2 шт), свежая ежевика (100 г), красное сухое вино (50 мл), сливочное масло (30 г).\n*Шаг 1 (0:00 - 0:05):* Сделайте надрезы на коже утки сеточкой, положите на холодную сковороду.\n*Шаг 2 (0:05 - 0:20):* Обжаривайте на слабом огне, вытапливая жир до хрустящей корочки. Доведите в духовке до прожарки medium.\n*Шаг 3 (0:20 - 0:30):* Деглазируйте сковороду вином, добавьте ежевику и затяните соус холодным сливочным маслом для глянца. Подавайте слайсами.`,
+            '101': `Как профессионал уверяю: высокая кухня возможна и с бюджетом из "Магнита"! Возьмите обычные куриные голени, снимите мясо с кости и сверните плотный рулет (галантин), начинив его обжаренным луком и самым обычным плавленым сырком. Запеките в духовке до хрустящей корочки. Выглядит как блюдо из дорогого ресторана, очень сытно, а стоит сущие копейки!`,
+            '011': `**Куриные сердечки с рисом**\n*Бюджет:* ~150 руб.\n*Ингредиенты:* Куриные сердечки (400 г), рис круглозерный (200 г), морковь (1 шт), лук (1 шт).\n*Шаг 1 (0:00 - 0:15):* Промойте рис и поставьте вариться на медленный огонь.\n*Шаг 2 (0:15 - 0:25):* Нарежьте лук и морковь, обжарьте на масле. Добавьте промытые сердечки.\n*Шаг 3 (0:25 - 0:40):* Тушите сердечки с овощами под крышкой 15 минут. Подавайте вместе с готовым рисом.`,
+            '111': `**Фрикасе из курицы по-домашнему (бюджетный ужин)**\nДаже из недорогих продуктов мы соберем ресторанное блюдо!\n*Ингредиенты:* Куриная грудка (300 г), недорогие шампиньоны (150 г), сметана 15% (3 ст.л.), чеснок, спагетти (200 г).\n*Шаг 1 (0:00 - 0:10):* Нарежьте курицу ровными кубиками, обжарьте на сильном огне до румяного колера. Поставьте вариться спагетти.\n*Шаг 2 (0:10 - 0:20):* Добавьте к курице нарезанные слайсами грибы и рубленый чеснок. Обжаривайте 5 минут.\n*Шаг 3 (0:20 - 0:25):* Убавьте огонь, введите сметану и пару ложек воды от варки пасты для создания шелковистого соуса. Прогрейте, смешайте с пастой и подавайте!`
+        };
+
+        const checkboxes = document.querySelectorAll('.loft-toggle');
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                playClickSound();
+                updateLoftConstructor();
+            });
+        });
+
+        function updateLoftConstructor() {
+            const t1 = document.getElementById('t1');
+            const t2 = document.getElementById('t2');
+            const t3 = document.getElementById('t3');
+
+            // Обновление подсветки текста тумблеров
+            document.getElementById('lbl-t1').className = t1.checked ? 'switch-label active' : 'switch-label';
+            document.getElementById('lbl-t2').className = t2.checked ? 'switch-label active' : 'switch-label';
+            document.getElementById('lbl-t3').className = t3.checked ? 'switch-label active' : 'switch-label';
+
+            // Формирование запроса пользователя
+            let promptHtml = "Что мне сегодня приготовить на ужин?";
+            if (t1.checked) promptHtml += ` <span class="added-token">[Действуй как профессиональный шеф-повар ресторана высокой кухни.]</span>`;
+            if (t2.checked) promptHtml += ` <span class="added-token">[Оформи ответ в виде четкого пошагового рецепта с граммовками и таймингом.]</span>`;
+            if (t3.checked) promptHtml += ` <span class="added-token">[У меня строгий бюджет. Используй только самые дешевые и базовые продукты из ближайшей Пятерочки или Магнита.]</span>`;
+            
+            document.getElementById('prompt-output').innerHTML = promptHtml;
+
+            // Вывод соответствующего ответа ИИ
+            const key = `${t1.checked?1:0}${t2.checked?1:0}${t3.checked?1:0}`;
+            const aiOutput = document.getElementById('ai-output');
+            
+            aiOutput.style.opacity = '0';
+            setTimeout(() => {
+                aiOutput.innerText = aiMatrix[key] || aiMatrix['000'];
+                aiOutput.style.opacity = '1';
+            }, 150);
+        }
+    </script>
+</body>
+</html>

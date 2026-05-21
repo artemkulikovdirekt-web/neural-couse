@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Модуль 2: Художники из пикселей</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --bg-base: #030407;
+            --loft-card-bg: rgba(20, 24, 33, 0.6);
+            --neon-teal: #00f3ff;
+            --neon-pink: #ff2a6d;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --border-loft: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; min-height: 100vh;
+            background-color: var(--bg-base);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex; justify-content: center; align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .module-container {
+            width: 100%; max-width: 1100px;
+            padding: 50px 20px;
+            z-index: 10;
+        }
+
+        .module-main-title {
+            font-family: 'Rajdhani', sans-serif; font-size: 2.8rem; color: #fff;
+            margin: 0 0 40px 0; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            border-left: 4px solid var(--neon-pink); padding-left: 20px;
+        }
+
+        .loft-block {
+            background: var(--loft-card-bg);
+            border: var(--border-loft);
+            border-radius: 6px;
+            padding: 35px;
+            margin-bottom: 40px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+        }
+        .loft-block-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.6rem; font-weight: 600;
+            color: var(--neon-pink); text-transform: uppercase;
+            letter-spacing: 2px; margin-top: 0; margin-bottom: 20px;
+        }
+        .loft-text {
+            font-weight: 300; line-height: 1.7; color: #cbd5e1; font-size: 1.1rem; margin: 0 0 15px 0;
+        }
+        .loft-text:last-child { margin-bottom: 0; }
+        
+        .highlight { color: #fff; font-weight: 500; border-bottom: 1px solid var(--neon-teal); }
+
+        /* --- ВНЕШНИЙ ВИД ПАНЕЛЕЙ --- */
+        .widget-container {
+            border: 1px solid rgba(255, 42, 109, 0.3);
+            background: rgba(10, 11, 16, 0.95);
+            border-radius: 6px; padding: 40px; margin-bottom: 40px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+        .widget-header {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; font-weight: 600;
+            color: #fff; text-transform: uppercase; letter-spacing: 2px;
+            margin-top: 0; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 15px;
+        }
+
+        /* Экран для вывода картинок */
+        .image-viewport {
+            width: 100%; height: 450px;
+            background: #040508; border: 1px solid #1e293b;
+            border-radius: 6px; position: relative; overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            margin-bottom: 25px;
+        }
+        .user-image {
+            width: 100%; height: 100%; object-fit: contain;
+            transition: opacity 0.3s ease;
+        }
+
+        .img-placeholder {
+            position: absolute; text-align: center; color: #64748b;
+            font-family: 'Fira Code', monospace; font-size: 0.9rem;
+            z-index: -1;
+        }
+
+        /* Кнопки переключения стилей (ИСКЛЮЧЕН ЖИРНЫЙ ШРИФТ) */
+        .btn-group {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
+        }
+        .panel-btn {
+            background: rgba(255,255,255,0.02); border: var(--border-loft);
+            color: #cbd5e1; font-family: 'Inter', sans-serif;
+            font-size: 1.05rem; font-weight: 400; letter-spacing: 0.5px;
+            padding: 15px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
+            text-align: center;
+        }
+        .panel-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .panel-btn.active {
+            background: rgba(255, 42, 109, 0.1); border-color: var(--neon-pink); color: var(--neon-pink);
+            box-shadow: 0 0 15px rgba(255, 42, 109, 0.3);
+        }
+
+        /* --- СЛАЙДЕР РАКУРСОВ --- */
+        .control-grid {
+            display: grid; grid-template-columns: 1fr 320px; gap: 25px;
+        }
+        @media(max-width: 800px) { .control-grid { grid-template-columns: 1fr; } }
+
+        .slider-viewport { margin-bottom: 0; }
+        
+        /* СТРЕЛОЧКИ СЛАЙДЕРА */
+        .arrow-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 44px; height: 44px; cursor: pointer;
+            border: 2px solid rgba(0, 243, 255, 0.4); border-radius: 50%;
+            background: rgba(3, 4, 7, 0.4); z-index: 20; 
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.3s; backdrop-filter: blur(4px);
+        }
+        .arrow-btn:hover {
+            border-color: var(--neon-teal); background: rgba(0, 243, 255, 0.15);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+        }
+        .arrow-btn::before {
+            content: ''; display: inline-block;
+            border: solid var(--neon-teal); border-width: 0 3px 3px 0; 
+            padding: 7px; opacity: 0.8;
+        }
+        .arrow-prev { left: 20px; }
+        .arrow-prev::before { transform: rotate(135deg); margin-left: 6px; }
+        .arrow-next { right: 20px; }
+        .arrow-next::before { transform: rotate(-45deg); margin-right: 6px; }
+
+        .controls-panel {
+            display: flex; flex-direction: column; gap: 15px;
+        }
+        /* Кнопки ракурсов (ИСКЛЮЧЕН УРОДЛИВЫЙ ШРИФТ) */
+        .angle-btn {
+            background: #090b11; border: 1px solid #1e293b; color: #cbd5e1;
+            padding: 20px; border-radius: 6px; cursor: pointer; text-align: left;
+            transition: 0.3s; position: relative; overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+        .angle-btn::before {
+            content: ''; position: absolute; left: 0; top: 0; width: 4px; height: 100%;
+            background: transparent; transition: 0.3s;
+        }
+        .angle-btn:hover { background: #131824; color: #fff; }
+        .angle-btn.active { background: rgba(0, 243, 255, 0.05); color: #fff; border-color: rgba(0, 243, 255, 0.3); }
+        .angle-btn.active::before { background: var(--neon-teal); box-shadow: 0 0 10px var(--neon-teal); }
+        
+        .angle-title { font-size: 1.1rem; font-weight: 500; margin-bottom: 8px; color: #fff; }
+        .angle-desc { font-size: 0.9rem; color: #64748b; line-height: 1.4; font-weight: 300; }
+
+        .generating { animation: flashEffect 0.4s ease-out; }
+        @keyframes flashEffect {
+            0% { opacity: 1; filter: brightness(1); }
+            50% { opacity: 0; filter: brightness(3) contrast(2); }
+            100% { opacity: 1; filter: brightness(1); }
+        }
+
+        .module-back-wrap {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0 20px;
+        }
+        .module-back-btn {
+            font-family: 'Rajdhani', sans-serif;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 300;
+            color: var(--neon-teal);
+            background: rgba(0, 243, 255, 0.04);
+            border: 1px solid rgba(0, 243, 255, 0.28);
+            border-radius: 6px;
+            padding: 16px 46px;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.04);
+        }
+        .module-back-btn:hover {
+            color: #030407;
+            background: var(--neon-teal);
+            border-color: var(--neon-teal);
+            box-shadow: 0 0 24px rgba(0, 243, 255, 0.45);
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="module-container">
+        <h1 class="module-main-title">MOD_02: Художники из пикселей</h1>
+
+        <div class="loft-block">
+            <h3 class="loft-block-title">От мыльных пятен к фотореализму</h3>
+            <p class="loft-text">В 2014 году нейросети едва могли сгенерировать размытое лицо размером 64x64 пикселя. Они работали по принципу генеративно-состязательных сетей (GAN): одна сетка пыталась нарисовать картинку, а другая пыталась поймать ее на подделке. Это было долго, дорого и нестабильно.</p>
+            <p class="loft-text">Настоящий прорыв случился с появлением <b>Диффузионных моделей</b> (Midjourney, Stable Diffusion, DALL-E). Они навсегда изменили правила игры, позволив генерировать гиперреалистичные изображения, концепт-арты и даже 3D-текстуры за считанные секунды по одному текстовому запросу.</p>
+        </div>
+
+        <div class="loft-block" style="border-color: rgba(0, 243, 255, 0.3);">
+            <h3 class="loft-block-title" style="color: var(--neon-teal);">Как работает диффузия?</h3>
+            <p class="loft-text">Представь старый ламповый телевизор без сигнала — на экране сплошной серый «белый шум». Диффузионная модель работает именно так. Процесс генерации начинается с абсолютно случайного хаоса пикселей.</p>
+            <p class="loft-text">Получив твой промпт (например, <span class="highlight">«Робот»</span>), нейросеть начинает шаг за шагом убирать шум. На каждом микро-шаге она вытягивает из хаоса те очертания, которые математически больше всего похожи на твой запрос, основываясь на миллионах просмотренных ранее референсов. Нейросеть не «склеивает» картинку из кусков чужих фото — она работает как скульптор, отсекающий лишнее от куска мрамора, пока не проявится идеальная форма.</p>
+        </div>
+
+        <div class="widget-container">
+            <h3 class="widget-header">Влияние стилистики на генерацию</h3>
+            <p class="loft-text">При составлении качественного промпта не обязательно выписывать каждое мельчайшее физическое свойство объекта. Огромную роль играет указание стиля.</p>
+            <p class="loft-text" style="margin-bottom: 25px;">Иногда достаточно добавить в запрос название художественного направления или имя конкретного автора (например, «В стиле Хаяо Миядзаки» или «Концепт-арт для игры»), чтобы нейросеть сама подтянула нужную цветовую палитру, тип освещения и геометрию форм. Стиль кардинально меняет настроение и подачу, оставляя сам объект неизменным.</p>
+            
+            <div class="image-viewport" id="style-viewport">
+                <div class="img-placeholder">[ЗДЕСЬ БУДЕТ КАРТИНКА СТИЛЯ]</div>
+                <img src="" id="style-image" class="user-image" alt=" ">
+            </div>
+
+            <div class="btn-group">
+                <div class="panel-btn interactive-btn" id="btn-hyper" onclick="setStyle('hyper', this)">Гиперреализм</div>
+                <div class="panel-btn interactive-btn" id="btn-anime" onclick="setStyle('anime', this)">Аниме</div>
+                <div class="panel-btn interactive-btn" id="btn-pixel" onclick="setStyle('pixel', this)">Пиксель-арт</div>
+            </div>
+        </div>
+
+        <div class="loft-block">
+            <h3 class="loft-block-title">Укрощение хаоса: Консистентность персонажа</h3>
+            <p class="loft-text">Главная проблема ранних нейросетей — они страдали «амнезией». Ты просишь нарисовать рыцаря, нейросеть выдает крутой арт. Просишь нарисовать <i>того же самого</i> рыцаря со спины — она рисует совершенно другого человека в других доспехах.</p>
+            <p class="loft-text"><b>Зачем это исправлять?</b> При создании комиксов, визуальных новелл, раскадровок для кино или ассетов для геймдева критически важно, чтобы персонаж оставался собой в любой сцене, независимо от освещения, угла камеры или окружения. Дизайн брони, шрамы на лице, пропорции тела — всё должно быть идентичным из кадра в кадр.</p>
+            <p class="loft-text">Сегодня эту проблему решили инструменты пространственного контроля. Фиксированный <b>Seed</b> (зерно генерации), <b>Character Reference</b> (ссылка на базовое лицо) и <b>ControlNet</b> (перенос скелета) позволяют жестко закрепить внешность персонажа и свободно вращать камеру вокруг него.</p>
+        </div>
+
+        <div class="widget-container" style="border-color: rgba(0, 243, 255, 0.3);">
+            <h3 class="widget-header" style="color: var(--neon-teal);">Контроль ракурса и окружения</h3>
+            <p class="loft-text" style="margin-bottom: 25px;">Выберите нужную сцену справа, а затем используйте стрелки на экране, чтобы переключаться между сгенерированными ракурсами одного и того же персонажа.</p>
+            
+            <div class="control-grid">
+                <div class="image-viewport slider-viewport">
+                    <div class="img-placeholder">[ЗДЕСЬ БУДЕТ КАРТИНКА РАКУРСА]</div>
+                    
+                    <div class="arrow-btn arrow-prev interactive-btn" onclick="prevSlide()"></div>
+                    <img src="" id="slider-image" class="user-image" alt=" ">
+                    <div class="arrow-btn arrow-next interactive-btn" onclick="nextSlide()"></div>
+                </div>
+
+                <div class="controls-panel">
+                    <div class="angle-btn interactive-btn" id="btn-head" onclick="setAngle('head', this)">
+                        <div class="angle-title">Голова робота</div>
+                        <div class="angle-desc">Крупный план лица. Используется для портретов и диалоговых окон.</div>
+                    </div>
+                    <div class="angle-btn interactive-btn" id="btn-body" onclick="setAngle('body', this)">
+                        <div class="angle-title">Ракурсы тела</div>
+                        <div class="angle-desc">Полный рост. Критически важно для создания 3D-моделей или спрайтов.</div>
+                    </div>
+                    <div class="angle-btn interactive-btn" id="btn-interior" onclick="setAngle('interior', this)">
+                        <div class="angle-title">Сцена: В интерьере</div>
+                        <div class="angle-desc">Персонаж помещен в сложное окружение с сохранением всех деталей брони.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-back-wrap">
+            <a class="module-back-btn interactive-btn" href="index.html?fromModule=1" onclick="return goBackToModules()">Вернуться к основным модулям</a>
+        </div>
+    </div>
+
+    <script>
+        const BGM_PLAYLIST = ['track1.mp3', 'track2.mp3', 'track3.mp3', 'track4.mp3'];
+        const BGM_STATE_KEY = 'courseBgMusicState';
+        const IS_EMBEDDED_MODULE = new URLSearchParams(window.location.search).get('embedded') === '1';
+        const BGM_VOLUME = 0.25;
+        const bgSavedState = (() => {
+            try { return JSON.parse(localStorage.getItem(BGM_STATE_KEY)) || {}; }
+            catch (e) { return {}; }
+        })();
+        let bgTrackIdx = Number.isInteger(bgSavedState.trackIdx) ? bgSavedState.trackIdx : 0;
+        let bgMusic = new Audio(BGM_PLAYLIST[bgTrackIdx] || BGM_PLAYLIST[0]);
+        let bgResumeAfterMedia = false;
+
+        bgMusic.volume = BGM_VOLUME;
+        bgMusic.muted = !!bgSavedState.muted;
+        if (Number.isFinite(bgSavedState.currentTime)) {
+            bgMusic.addEventListener('loadedmetadata', () => {
+                if (bgSavedState.currentTime < bgMusic.duration) bgMusic.currentTime = bgSavedState.currentTime;
+            }, { once: true });
+        }
+
+        function goBackToModules() {
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:close-module' }, '*');
+                return false;
+            }
+            return true;
+        }
+
+        function saveBgMusicState() {
+            localStorage.setItem(BGM_STATE_KEY, JSON.stringify({
+                trackIdx: bgTrackIdx,
+                currentTime: bgMusic.currentTime || 0,
+                muted: bgMusic.muted,
+                paused: bgMusic.paused
+            }));
+        }
+
+        function playBgMusic() {
+            if (IS_EMBEDDED_MODULE) return;
+            bgMusic.volume = BGM_VOLUME;
+            bgMusic.play().catch(() => {
+                document.addEventListener('click', playBgMusic, { once: true });
+            });
+        }
+
+        function nextBgTrack() {
+            bgTrackIdx = (bgTrackIdx + 1) % BGM_PLAYLIST.length;
+            bgMusic.src = BGM_PLAYLIST[bgTrackIdx];
+            bgMusic.currentTime = 0;
+            playBgMusic();
+            saveBgMusicState();
+        }
+
+        function pauseBgMusicForMedia() {
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-pause' }, '*');
+                return;
+            }
+            bgResumeAfterMedia = !bgMusic.paused;
+            bgMusic.pause();
+            saveBgMusicState();
+        }
+
+        function hasActiveMedia() {
+            return Array.from(document.querySelectorAll('audio, video')).some(media => !media.paused && !media.ended);
+        }
+
+        function resumeBgMusicAfterMedia() {
+            if (hasActiveMedia()) return;
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-resume' }, '*');
+                return;
+            }
+            if (bgResumeAfterMedia) playBgMusic();
+            bgResumeAfterMedia = false;
+            saveBgMusicState();
+        }
+
+        function bindBgMusicMediaGuards() {
+            document.querySelectorAll('audio, video').forEach(media => {
+                media.addEventListener('play', pauseBgMusicForMedia);
+                media.addEventListener('ended', () => setTimeout(resumeBgMusicAfterMedia, 0));
+                media.addEventListener('pause', () => setTimeout(resumeBgMusicAfterMedia, 0));
+            });
+        }
+
+        bgMusic.addEventListener('ended', nextBgTrack);
+        window.addEventListener('beforeunload', saveBgMusicState);
+        document.addEventListener('DOMContentLoaded', () => {
+            bindBgMusicMediaGuards();
+            if (!IS_EMBEDDED_MODULE && !bgSavedState.paused) playBgMusic();
+        });
+    </script>
+
+    <script>
+        // =========================================================================
+        // АССЕТЫ: ПРОСТО ПОЛОЖИ ЭТИ ФАЙЛЫ В ПАПКУ С ПРОЕКТОМ
+        // =========================================================================
+        
+        const styleImages = {
+            'hyper': 'style-hyper.jpg', 
+            'anime': 'style-anime.jpg', 
+            'pixel': 'style-pixel.jpg'  
+        };
+
+        const sliderData = {
+            'head': [
+                'head-1.jpg', 
+                'head-2.jpg'   
+            ],
+            'body': [
+                'body-1.jpg', 
+                'body-2.jpg'   
+            ],
+            'interior': [
+                'room-1.jpg', 
+                'room-2.jpg', 
+                'room-3.jpg',
+                'room-4.jpg',
+                'room-5.jpg'
+            ]
+        };
+
+        // --- АУДИО ДВИЖОК ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx, noiseBuffer; 
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+                const bufferSize = audioCtx.sampleRate * 0.05; 
+                noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { output[i] = Math.random() * 2 - 1; }
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playHoverSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + 0.01);
+            gain.gain.setValueAtTime(0.008, audioCtx.currentTime); 
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.01);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        function playClickSound() {
+            if (!audioCtx) initAudio();
+            if (!noiseBuffer) return;
+            const noise = audioCtx.createBufferSource();
+            const noiseGain = audioCtx.createGain();
+            noise.buffer = noiseBuffer;
+            noiseGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.005);
+            noise.connect(noiseGain); noiseGain.connect(audioCtx.destination);
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.01);
+            oscGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.01);
+            osc.connect(oscGain); oscGain.connect(audioCtx.destination);
+            noise.start(); osc.start(); osc.stop(audioCtx.currentTime + 0.01);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('click', initAudio, { once: true });
+            document.querySelectorAll('.interactive-btn').forEach(btn => {
+                btn.addEventListener('mouseenter', playHoverSound);
+                btn.addEventListener('mousedown', playClickSound);
+            });
+
+            document.getElementById('btn-hyper').click();
+            document.getElementById('btn-head').click();
+        });
+
+        // --- ЛОГИКА БЛОКА СТИЛЕЙ ---
+        function setStyle(styleKey, btnElement) {
+            document.querySelectorAll('.panel-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            const imgElement = document.getElementById('style-image');
+            
+            imgElement.classList.remove('generating');
+            void imgElement.offsetWidth; 
+            imgElement.classList.add('generating');
+
+            setTimeout(() => {
+                imgElement.src = styleImages[styleKey];
+            }, 200); 
+        }
+
+        // --- ЛОГИКА СЛАЙДЕРА РАКУРСОВ ---
+        let currentCategory = 'head';
+        let currentIndex = 0;
+
+        function setAngle(categoryKey, btnElement) {
+            document.querySelectorAll('.angle-btn').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            currentCategory = categoryKey;
+            currentIndex = 0;
+            updateSliderImage();
+        }
+
+        function prevSlide() {
+            const arr = sliderData[currentCategory];
+            currentIndex--;
+            if (currentIndex < 0) currentIndex = arr.length - 1;
+            updateSliderImage();
+        }
+
+        function nextSlide() {
+            const arr = sliderData[currentCategory];
+            currentIndex++;
+            if (currentIndex >= arr.length) currentIndex = 0;
+            updateSliderImage();
+        }
+
+        function updateSliderImage() {
+            const imgElement = document.getElementById('slider-image');
+            imgElement.src = sliderData[currentCategory][currentIndex];
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Модуль 5: Vibe Coding & FMV</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Rajdhani:wght@500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+        :root {
+            --bg-base: #030407;
+            --loft-card-bg: rgba(20, 24, 33, 0.6);
+            --neon-teal: #00f3ff;
+            --neon-red: #ff2a2a;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --border-loft: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; min-height: 100vh;
+            background-color: var(--bg-base);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex; justify-content: center; align-items: flex-start;
+            overflow-y: auto;
+        }
+
+        .grid-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1; pointer-events: none;
+        }
+
+        .module-container { width: 100%; max-width: 1100px; padding: 50px 20px; z-index: 10; }
+
+        body.embedded-game {
+            display: block;
+            overflow: hidden;
+        }
+        body.embedded-game .grid-bg,
+        body.embedded-game .module-main-title,
+        body.embedded-game .loft-block,
+        body.embedded-game .controls-hint {
+            display: none;
+        }
+        body.embedded-game .module-container {
+            max-width: none;
+            height: 100vh;
+            padding: 0;
+        }
+        body.embedded-game .game-container {
+            width: 100vw;
+            max-width: none;
+            height: 100vh;
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+            aspect-ratio: auto;
+            box-shadow: none;
+        }
+        body.embedded-game .module-back-wrap {
+            position: fixed;
+            top: 22px;
+            left: 22px;
+            z-index: 120;
+            margin: 0;
+        }
+        body.embedded-game .module-back-btn {
+            background: rgba(3, 4, 7, 0.72);
+            backdrop-filter: blur(8px);
+            padding: 12px 24px;
+            font-size: 0.85rem;
+        }
+
+        .module-main-title {
+            font-family: 'Rajdhani', sans-serif; font-size: 2.8rem; color: #fff;
+            margin: 0 0 40px 0; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+            border-left: 4px solid var(--neon-teal); padding-left: 20px;
+        }
+
+        .loft-block {
+            background: var(--loft-card-bg); border: var(--border-loft);
+            border-radius: 6px; padding: 35px; margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px);
+        }
+        .loft-block-title {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 600;
+            color: var(--neon-teal); text-transform: uppercase; margin-bottom: 20px;
+        }
+        .loft-text {
+            font-weight: 300; line-height: 1.7; color: #cbd5e1; font-size: 1.1rem; margin: 0 0 15px 0;
+        }
+        .loft-text:last-child { margin-bottom: 0; }
+
+        /* ИГРОВОЙ БЛОК */
+        .game-container {
+            width: 100%; max-width: 1000px; margin: 0 auto 40px auto;
+            background: #000; border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 6px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 243, 255, 0.1);
+            position: relative; overflow: hidden; aspect-ratio: 16/9;
+        }
+
+        #game-video {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+
+        /* UI: Оверлей ожидания */
+        #start-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 50;
+        }
+        .play-game-btn {
+            background: rgba(0, 243, 255, 0.05); border: 1px solid var(--neon-teal);
+            color: var(--neon-teal); font-family: 'Rajdhani', sans-serif; font-size: 1.5rem;
+            padding: 15px 40px; border-radius: 4px; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 3px; transition: 0.3s;
+        }
+        .play-game-btn:hover { background: var(--neon-teal); color: #000; box-shadow: 0 0 20px var(--neon-teal); }
+
+        /* UI: Выбор диалога (ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ ДИЗАЙН) */
+        #choice-overlay {
+            position: absolute; bottom: 12%; left: 0; width: 100%;
+            display: none; flex-direction: row; justify-content: center; gap: 80px; align-items: flex-end; z-index: 40;
+            padding: 0 40px;
+        }
+        
+        .choice-btn {
+            background: transparent; border: none; padding: 10px 20px; cursor: pointer; transition: 0.3s; text-align: center;
+            display: flex; flex-direction: column; align-items: center; min-width: 280px;
+        }
+
+        /* Заголовок действия */
+        .choice-action {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 500;
+            letter-spacing: 5px; color: #fff; text-transform: uppercase; margin-bottom: 8px;
+            position: relative; padding-bottom: 6px; transition: 0.3s; text-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+        /* Тонкая линия-разделитель */
+        .choice-action::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 140%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.3s;
+        }
+
+        /* Текст реплики (ТОНКИЙ, БИРЮЗОВЫЙ) */
+        .choice-text {
+            font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
+            color: var(--neon-teal); transition: 0.3s; opacity: 0.8;
+        }
+
+        /* Эффекты при наведении */
+        .choice-btn:hover .choice-action { color: var(--neon-teal); text-shadow: 0 0 10px rgba(0, 243, 255, 0.6); }
+        .choice-btn:hover .choice-action::after { background: linear-gradient(90deg, transparent, var(--neon-teal), transparent); box-shadow: 0 0 5px var(--neon-teal); }
+        .choice-btn:hover .choice-text { opacity: 1; text-shadow: 0 0 8px rgba(0, 243, 255, 0.4); }
+
+        @media (max-width: 768px) {
+            #choice-overlay { flex-direction: column; gap: 20px; bottom: 8%; }
+            .choice-btn { min-width: 80%; padding: 10px; }
+        }
+
+        /* UI: QTE Экшен */
+        #qte-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+            background: radial-gradient(circle, transparent 50%, rgba(255, 0, 0, 0.3) 100%); z-index: 45;
+        }
+        .qte-prompt {
+            font-family: 'Rajdhani', sans-serif; font-size: 3rem; color: #fff;
+            text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 20px var(--neon-red);
+            margin-bottom: 20px; animation: pulse 1s infinite; text-align: center;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        
+        /* Иконка стрелки / SVG */
+        .qte-icon { margin-bottom: 20px; filter: drop-shadow(0 0 15px var(--neon-teal)); }
+
+        .timer-bar-container {
+            width: 300px; height: 10px; background: rgba(255,255,255,0.2);
+            border-radius: 5px; overflow: hidden;
+        }
+        .timer-bar {
+            width: 100%; height: 100%; background: var(--neon-red); transform-origin: left;
+        }
+
+        /* UI: ЭКРАН GAME OVER */
+        #game-over-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); 
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 60;
+        }
+        .game-over-text {
+            font-family: 'Rajdhani', sans-serif; font-size: 5rem; font-weight: 700;
+            color: var(--neon-teal); text-transform: uppercase; letter-spacing: 12px;
+            text-shadow: 0 0 25px rgba(0, 243, 255, 0.6), 0 0 10px rgba(0, 243, 255, 0.8);
+            margin: 0; padding: 0;
+        }
+
+        .controls-hint {
+            text-align: center; color: var(--text-muted); font-family: 'Fira Code', monospace;
+            font-size: 0.9rem; margin-top: -20px; margin-bottom: 40px; line-height: 1.5;
+        }
+
+        .module-back-wrap {
+            display: flex; justify-content: center; margin: 10px 0 20px;
+        }
+        .module-back-btn {
+            font-family: 'Rajdhani', sans-serif; text-decoration: none; text-transform: uppercase;
+            letter-spacing: 3px; color: var(--neon-teal); background: rgba(0, 243, 255, 0.06);
+            border: 1px solid rgba(0, 243, 255, 0.35); border-radius: 6px; padding: 16px 46px;
+            transition: all 0.3s ease; box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.04);
+        }
+        .module-back-btn:hover {
+            color: #030407; background: var(--neon-teal); border-color: var(--neon-teal);
+            box-shadow: 0 0 24px rgba(0, 243, 255, 0.45); transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid-bg"></div>
+
+    <div class="module-container">
+        <h1 class="module-main-title">MOD_05: Vibe Coding & FMV</h1>
+
+        <div class="loft-block">
+            <h3 class="loft-block-title">Программирование логики без кода</h3>
+            <p class="loft-text">Многие думают, что для создания игры обязательно нужно знать сложные языки вроде C++ или C#. В парадигме <b>Vibe Coding</b> это больше не так. Вы выступаете в роли архитектора: ваша задача — придумать логику и объяснить её искусственному интеллекту.</p>
+            <p class="loft-text">Перед вами полноценная <b>FMV-игра (Full Motion Video)</b>. Вся механика — ветвления диалогов, замедление времени (Bullet Time) и уклонения (QTE) — реализована прямо в браузере. Вы просто даете команду плееру: «Замедли видео в 5 раз на 12-й секунде и считай свайп пальцем с экрана». ИИ пишет для этого скрипт.</p>
+        </div>
+
+        <div class="game-container" id="game-area">
+            
+            <video id="game-video" playsinline preload="auto">
+                <source src="m5-1-intro.mp4" type="video/mp4">
+            </video>
+
+            <div id="start-overlay">
+                <button class="play-game-btn" onclick="startGame()">НАЧАТЬ ИГРУ</button>
+            </div>
+
+            <div id="choice-overlay">
+                <div class="choice-btn" onclick="makeChoice('choice1')">
+                    <div class="choice-action">1 ВАРИАНТ</div>
+                    <div class="choice-text">«Оно бронированное. Я знаю.»</div>
+                </div>
+                <div class="choice-btn" onclick="makeChoice('choice2')">
+                    <div class="choice-action">2 ВАРИАНТ</div>
+                    <div class="choice-text">«И кто ты? Я чувствую опасность, что делать?»</div>
+                </div>
+            </div>
+
+            <div id="qte-overlay">
+                <div class="qte-icon" id="qte-icon"></div>
+                <div class="qte-prompt" id="qte-text">СВАЙП ВЛЕВО</div>
+                <div class="timer-bar-container">
+                    <div class="timer-bar" id="qte-timer"></div>
+                </div>
+            </div>
+
+            <div id="game-over-overlay">
+                <div class="game-over-text">GAME OVER</div>
+            </div>
+
+        </div>
+
+        <div class="controls-hint">
+            [ УПРАВЛЕНИЕ ] ПК: СТРЕЛОЧКИ КЛАВИАТУРЫ (ДЛЯ КРУГА - КЛАВИША 'A')<br>
+            ТЕЛЕФОН: СВАЙПЫ ПАЛЬЦЕМ И КРУГОВЫЕ ДВИЖЕНИЯ ПО ЭКРАНУ
+        </div>
+
+        <div class="module-back-wrap">
+            <a class="module-back-btn interactive-btn" href="index.html?fromModule=1" onclick="return goBackToModules()">Вернуться к основным модулям</a>
+        </div>
+
+    </div>
+
+    <script>
+        // Фоновая музыка (интеграция из прошлых модулей)
+        const BGM_PLAYLIST = ['track1.mp3', 'track2.mp3', 'track3.mp3', 'track4.mp3'];
+        const BGM_STATE_KEY = 'courseBgMusicState';
+        const IS_EMBEDDED_MODULE = new URLSearchParams(window.location.search).get('embedded') === '1';
+        const BGM_VOLUME = 0.25;
+        const bgSavedState = (() => {
+            try { return JSON.parse(localStorage.getItem(BGM_STATE_KEY)) || {}; }
+            catch (e) { return {}; }
+        })();
+        let bgTrackIdx = Number.isInteger(bgSavedState.trackIdx) ? bgSavedState.trackIdx : 0;
+        let bgMusic = new Audio(BGM_PLAYLIST[bgTrackIdx] || BGM_PLAYLIST[0]);
+        let bgResumeAfterMedia = false;
+        let gameSessionActive = false;
+
+        bgMusic.volume = BGM_VOLUME;
+        bgMusic.muted = !!bgSavedState.muted;
+        if (Number.isFinite(bgSavedState.currentTime)) {
+            bgMusic.addEventListener('loadedmetadata', () => {
+                if (bgSavedState.currentTime < bgMusic.duration) bgMusic.currentTime = bgSavedState.currentTime;
+            }, { once: true });
+        }
+
+        function goBackToModules() {
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:close-module' }, '*');
+                return false;
+            }
+            return true;
+        }
+
+        function saveBgMusicState() {
+            localStorage.setItem(BGM_STATE_KEY, JSON.stringify({
+                trackIdx: bgTrackIdx,
+                currentTime: bgMusic.currentTime || 0,
+                muted: bgMusic.muted,
+                paused: bgMusic.paused
+            }));
+        }
+
+        function playBgMusic() {
+            if (IS_EMBEDDED_MODULE) return;
+            bgMusic.volume = BGM_VOLUME;
+            bgMusic.play().catch(() => {
+                document.addEventListener('click', playBgMusic, { once: true });
+            });
+        }
+
+        function nextBgTrack() {
+            bgTrackIdx = (bgTrackIdx + 1) % BGM_PLAYLIST.length;
+            bgMusic.src = BGM_PLAYLIST[bgTrackIdx];
+            bgMusic.currentTime = 0;
+            playBgMusic();
+            saveBgMusicState();
+        }
+
+        function pauseBgMusicForMedia() {
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-pause' }, '*');
+                return;
+            }
+            bgResumeAfterMedia = !bgMusic.paused;
+            bgMusic.pause();
+            saveBgMusicState();
+        }
+
+        function hasActiveMedia() {
+            return Array.from(document.querySelectorAll('audio, video')).some(media => !media.paused && !media.ended);
+        }
+
+        function resumeBgMusicAfterMedia() {
+            if (hasActiveMedia()) return;
+            if (gameSessionActive) return;
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-resume' }, '*');
+                return;
+            }
+            if (bgResumeAfterMedia) playBgMusic();
+            bgResumeAfterMedia = false;
+            saveBgMusicState();
+        }
+
+        function bindBgMusicMediaGuards() {
+            document.querySelectorAll('audio, video').forEach(media => {
+                media.addEventListener('play', pauseBgMusicForMedia);
+                media.addEventListener('ended', () => setTimeout(resumeBgMusicAfterMedia, 0));
+                media.addEventListener('pause', () => setTimeout(resumeBgMusicAfterMedia, 0));
+            });
+        }
+
+        bgMusic.addEventListener('ended', nextBgTrack);
+        window.addEventListener('beforeunload', saveBgMusicState);
+        document.addEventListener('DOMContentLoaded', () => {
+            if (IS_EMBEDDED_MODULE) document.body.classList.add('embedded-game');
+            bindBgMusicMediaGuards();
+            if (!IS_EMBEDDED_MODULE && !bgSavedState.paused) playBgMusic();
+        });
+    </script>
+
+    <script>
+        // ==========================================================
+        // БАЗА ДАННЫХ ИГРЫ (МАРШРУТЫ И QTE)
+        // ==========================================================
+        const gameData = {
+            'intro': {
+                src: 'm5-1-intro.mp4',
+                type: 'dialogue' 
+            },
+            'choice1': {
+                src: 'm5-2-ans1.mp4',
+                type: 'cinematic',
+                next: 'action1' 
+            },
+            'choice2': {
+                src: 'm5-3-ans2.mp4',
+                type: 'cinematic',
+                next: 'action1'
+            },
+            'action1': { 
+                src: 'm5-4-invasion.mp4',
+                type: 'action',
+                next: 'action2',
+                failScene: 'fail1', 
+                immediateFail: false, // Фолс = видео доиграет до конца при ошибке
+                qtes: [
+                    { time: 2.0, direction: 'up', text: 'ВВЕРХ', durationMs: 1000 },
+                    { time: 3.0, direction: 'down', text: 'ВНИЗ', durationMs: 1000 }
+                ]
+            },
+            'action2': { 
+                src: 'm5-5-door.mp4',
+                type: 'action',
+                next: 'action3',
+                immediateFail: true, // Тру = моментальная смерть (замедление не висит)
+                qtes: [
+                    { time: 0.1, direction: 'rotate_ccw', text: 'КРУТИ ПРОТИВ ЧАСОВОЙ', durationMs: 1000 }
+                ]
+            },
+            'action3': { 
+                src: 'm5-6-action.mp4',
+                type: 'action',
+                next: 'win',
+                failScene: 'fail2', 
+                immediateFail: false, // Фолс = видео доиграет до конца при ошибке
+                qtes: [
+                    { time: 1.5, direction: 'right', text: 'ВПРАВО', durationMs: 1000 }
+                ]
+            },
+            'fail1': { 
+                src: 'm5-fail.mp4',
+                type: 'end'
+            },
+            'fail2': { 
+                src: 'm5-fail2.mp4',
+                type: 'end'
+            },
+            'win': {
+                src: '', type: 'end' 
+            }
+        };
+
+        // Чистые SVG-иконки для стрелок
+        const svgIcons = {
+            'left': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>',
+            'right': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>',
+            'up': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>',
+            'down': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>',
+            'rotate_ccw': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>'
+        };
+
+        const video = document.getElementById('game-video');
+        const startOverlay = document.getElementById('start-overlay');
+        const choiceOverlay = document.getElementById('choice-overlay');
+        const qteOverlay = document.getElementById('qte-overlay');
+        const gameOverOverlay = document.getElementById('game-over-overlay');
+        const qteText = document.getElementById('qte-text');
+        const qteIcon = document.getElementById('qte-icon');
+        const qteTimerBar = document.getElementById('qte-timer');
+        const gameArea = document.getElementById('game-area');
+
+        let currentScene = '';
+        let activeQTE = null;
+        let qteTimeout = null;
+        let gameOverTriggered = false; 
+        let sceneFailed = false; // Флаг отложенного провала
+
+        let rotationAngleTotal = 0;
+        let rotationLastAngle = null;
+
+        function startGame() {
+            gameSessionActive = true;
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-pause' }, '*');
+            }
+            startOverlay.style.display = 'none';
+            loadScene('intro');
+        }
+
+        function loadScene(sceneId) {
+            currentScene = sceneId;
+            const sceneData = gameData[sceneId];
+            
+            gameOverTriggered = false;
+            sceneFailed = false;
+            gameOverOverlay.style.display = 'none';
+            choiceOverlay.style.display = 'none';
+            qteOverlay.style.display = 'none';
+
+            if (sceneData.type === 'end') {
+                if (sceneData.src !== '') {
+                    video.src = sceneData.src;
+                    video.playbackRate = 1.0;
+                    video.play().catch(e => console.log('Файл проигрыша не найден'));
+                }
+                return;
+            }
+
+            video.src = sceneData.src;
+            video.playbackRate = 1.0;
+            video.play().catch(e => {
+                console.log(`Файл ${sceneData.src} не найден. Убедись, что он в папке.`);
+                setTimeout(() => handleVideoEnd(), 2000); 
+            });
+
+            if (sceneData.qtes) {
+                sceneData.qtes.forEach(q => q.triggered = false);
+            }
+        }
+
+        video.addEventListener('timeupdate', () => {
+            const sceneData = gameData[currentScene];
+            
+            if (currentScene === 'fail1') {
+                if (video.currentTime >= 2.5 && !gameOverTriggered) {
+                    gameOverTriggered = true;
+                    gameOverOverlay.style.display = 'flex'; 
+                }
+                return; 
+            }
+
+            if (!sceneData || sceneData.type !== 'action' || !sceneData.qtes) return;
+
+            sceneData.qtes.forEach(qte => {
+                // Если сцена уже провалена, новые QTE не всплывают
+                if (!qte.triggered && !sceneFailed && video.currentTime >= qte.time) {
+                    qte.triggered = true;
+                    triggerQTE(qte);
+                }
+            });
+        });
+
+        video.addEventListener('ended', handleVideoEnd);
+
+        function handleVideoEnd() {
+            const sceneData = gameData[currentScene];
+            if (!sceneData) return;
+
+            if (sceneFailed) {
+                // Видео доиграло до конца после ошибки, грузим сцену смерти
+                const targetFail = sceneData.failScene ? sceneData.failScene : 'fail';
+                loadScene(targetFail);
+                return;
+            }
+
+            if (sceneData.type === 'dialogue') {
+                choiceOverlay.style.display = 'flex';
+            } else if (sceneData.type === 'cinematic' || sceneData.type === 'action') {
+                loadScene(sceneData.next);
+            }
+        }
+
+        function makeChoice(nextSceneId) {
+            choiceOverlay.style.display = 'none';
+            loadScene(nextSceneId);
+        }
+
+        function triggerQTE(qteParams) {
+            activeQTE = qteParams;
+            video.playbackRate = 0.2; 
+            
+            rotationAngleTotal = 0;
+            rotationLastAngle = null;
+
+            qteOverlay.style.display = 'flex';
+            qteText.innerText = qteParams.text;
+            qteIcon.innerHTML = svgIcons[qteParams.direction] || '';
+
+            qteTimerBar.style.transition = 'none';
+            qteTimerBar.style.transform = 'scaleX(1)';
+            
+            setTimeout(() => {
+                qteTimerBar.style.transition = `transform ${qteParams.durationMs}ms linear`;
+                qteTimerBar.style.transform = 'scaleX(0)';
+            }, 50);
+
+            qteTimeout = setTimeout(() => {
+                triggerFailFlow();
+            }, qteParams.durationMs);
+        }
+
+        function resolveQTE(playerDirection) {
+            if (!activeQTE) return;
+
+            if (playerDirection === activeQTE.direction) {
+                clearTimeout(qteTimeout);
+                activeQTE = null;
+                qteOverlay.style.display = 'none';
+                
+                video.playbackRate = 1.0; 
+                playSuccessSound();
+            } else {
+                triggerFailFlow();
+            }
+        }
+
+        // Общая логика провала (моментально или отложенно)
+        function triggerFailFlow() {
+            clearTimeout(qteTimeout);
+            activeQTE = null;
+            qteOverlay.style.display = 'none';
+            video.playbackRate = 1.0; // Всегда отключаем слоу-мо
+            
+            const sceneData = gameData[currentScene];
+            
+            if (sceneData.immediateFail) {
+                // Смерть моментальная (например, 5-я сцена с вращением)
+                const targetFail = sceneData.failScene ? sceneData.failScene : 'fail';
+                loadScene(targetFail); 
+            } else {
+                // Смерть отложенная (робот просто добегает кадр до конца)
+                sceneFailed = true;
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (!activeQTE) return;
+            if (e.key === 'ArrowLeft') resolveQTE('left');
+            if (e.key === 'ArrowRight') resolveQTE('right');
+            if (e.key === 'ArrowUp') resolveQTE('up');
+            if (e.key === 'ArrowDown') resolveQTE('down');
+            if (e.key === 'a' || e.key === 'A') resolveQTE('rotate_ccw');
+        });
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        gameArea.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, {passive: true});
+
+        gameArea.addEventListener('touchmove', (e) => {
+            if (!activeQTE || activeQTE.direction !== 'rotate_ccw') return;
+
+            let rect = gameArea.getBoundingClientRect();
+            let centerX = rect.left + rect.width / 2;
+            let centerY = rect.top + rect.height / 2;
+
+            let touchX = e.touches[0].clientX;
+            let touchY = e.touches[0].clientY;
+
+            let angle = Math.atan2(touchY - centerY, touchX - centerX);
+
+            if (rotationLastAngle !== null) {
+                let delta = angle - rotationLastAngle;
+                
+                if (delta > Math.PI) delta -= 2 * Math.PI;
+                if (delta < -Math.PI) delta += 2 * Math.PI;
+
+                rotationAngleTotal += delta;
+
+                if (rotationAngleTotal < -Math.PI) {
+                    resolveQTE('rotate_ccw');
+                    rotationLastAngle = null;
+                    return;
+                }
+            }
+            rotationLastAngle = angle;
+        }, {passive: true});
+
+        gameArea.addEventListener('touchend', (e) => {
+            if (!activeQTE || activeQTE.direction === 'rotate_ccw') return;
+
+            let touchEndX = e.changedTouches[0].clientX;
+            let touchEndY = e.changedTouches[0].clientY;
+
+            let dx = touchEndX - touchStartX;
+            let dy = touchEndY - touchStartY;
+            
+            if (Math.abs(dx) < 40 && Math.abs(dy) < 40) return;
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0) resolveQTE('right');
+                else resolveQTE('left');
+            } else {
+                if (dy > 0) resolveQTE('down');
+                else resolveQTE('up');
+            }
+        }, {passive: true});
+
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function playSuccessSound() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+    </script>
+</body>
+</html>
