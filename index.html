@@ -211,6 +211,23 @@
             background: #000; z-index: 9999;
         }
         #fullscreen-video-overlay video { width: 100%; height: 100%; object-fit: contain; }
+        .fullscreen-video-loading {
+            position: absolute; inset: 0; z-index: 10000;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+            background: #000; color: var(--neon-teal);
+            font-family: 'Rajdhani', sans-serif; text-transform: uppercase;
+            letter-spacing: 5px; font-weight: 300;
+        }
+        .fullscreen-video-loading::after {
+            content: ''; width: min(320px, 70vw); height: 2px; margin-top: 18px;
+            background: linear-gradient(90deg, transparent, var(--neon-teal), transparent);
+            box-shadow: 0 0 18px rgba(0, 243, 255, 0.6);
+            animation: loadingPulse 1s ease-in-out infinite alternate;
+        }
+        @keyframes loadingPulse {
+            from { opacity: 0.25; transform: scaleX(0.6); }
+            to { opacity: 1; transform: scaleX(1); }
+        }
         .skip-btn {
             position: absolute; top: 30px; right: 30px; z-index: 10000;
             background: rgba(0,0,0,0.5); border: var(--border-thin);
@@ -268,6 +285,7 @@
 
     <div id="fullscreen-video-overlay">
         <button class="skip-btn interactive-btn" onclick="closeVideo()">Пропуск -></button>
+        <div class="fullscreen-video-loading" id="fullscreen-video-loading">Загрузка видео</div>
         <video id="fs-video" playsinline>
             <source src="" type="video/mp4">
         </video>
@@ -548,6 +566,7 @@
             videoCallback = onComplete;
             const overlay = document.getElementById('fullscreen-video-overlay');
             const video = document.getElementById('fs-video');
+            const loading = document.getElementById('fullscreen-video-loading');
             
             document.getElementById('dashboard').style.opacity = '0';
             document.getElementById('music-player-ui').style.display = 'none';
@@ -556,14 +575,32 @@
             
             setTimeout(() => {
                 overlay.style.display = 'block';
+                loading.style.display = 'flex';
                 video.src = src;
+                video.load();
                 
-                let playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        video.muted = true;
-                        video.play();
-                    });
+                let started = false;
+                const startVideo = () => {
+                    if (started) return;
+                    started = true;
+                    let playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise
+                            .then(() => { loading.style.display = 'none'; })
+                            .catch(error => {
+                                video.muted = true;
+                                video.play().then(() => {
+                                    loading.style.display = 'none';
+                                });
+                            });
+                    }
+                };
+
+                if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                    startVideo();
+                } else {
+                    video.addEventListener('loadeddata', startVideo, { once: true });
+                    video.addEventListener('canplay', startVideo, { once: true });
                 }
             }, 400);
 
@@ -577,6 +614,7 @@
             video.pause();
             video.currentTime = 0;
             overlay.style.display = 'none';
+            document.getElementById('fullscreen-video-loading').style.display = 'none';
             if (resumeMusicAfterVideo) {
                 startPlaylist();
             }
