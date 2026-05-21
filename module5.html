@@ -626,7 +626,7 @@
                 src: 'm5-6-action.mp4',
                 type: 'action',
                 next: 'win',
-                failScene: 'fail2', 
+                failScene: 'fail1',
                 immediateFail: false, // Фолс = видео доиграет до конца при ошибке
                 qtes: [
                     { time: 1.5, direction: 'right', text: 'ВПРАВО', durationMs: 1000 }
@@ -634,10 +634,6 @@
             },
             'fail1': { 
                 src: 'm5-fail.mp4',
-                type: 'end'
-            },
-            'fail2': { 
-                src: 'm5-fail2.mp4',
                 type: 'end'
             },
             'win': {
@@ -754,32 +750,58 @@
             });
             // #endregion
 
-            try {
-                await Promise.all(files.map(async (src) => {
-                    preloadFile.innerText = `Загрузка: ${src}`;
-                    const blob = await fetchVideoBlob(src);
-                    videoBlobUrls[src] = URL.createObjectURL(blob);
+            const results = await Promise.allSettled(files.map(async (src) => {
+                preloadFile.innerText = `Загрузка: ${src}`;
+                const blob = await fetchVideoBlob(src);
+                videoBlobUrls[src] = URL.createObjectURL(blob);
+                return src;
+            }));
 
+            const failedFiles = [];
+            results.forEach((result, index) => {
+                const src = files[index];
+                if (result.status === 'fulfilled') {
                     loaded++;
-                    const percent = Math.round((loaded / files.length) * 100);
-                    preloadPercent.innerText = `${percent}%`;
-                    preloadFill.style.width = `${percent}%`;
                     // #region agent log
                     window.agentDebugLog('H1', 'module5.html:preloadAllGameVideos', 'preload progress updated', {
                         src,
                         loaded,
                         total: files.length,
-                        percent,
+                        percent: Math.round((loaded / files.length) * 100),
                         blobKeys: Object.keys(videoBlobUrls)
                     });
                     // #endregion
-                }));
-            } catch (error) {
+                } else {
+                    const reason = result.reason && result.reason.message ? result.reason.message : String(result.reason);
+                    failedFiles.push({ src, reason });
+                    console.error(`[preload] Не удалось загрузить ${src}:`, result.reason);
+                }
+            });
+
+            preloadPercent.innerText = '100%';
+            preloadFill.style.width = '100%';
+
+            // #region agent log
+            window.agentDebugLog('H1', 'module5.html:preloadAllGameVideos', 'preload finished', {
+                runId: 'post-fix',
+                loaded,
+                failed: failedFiles,
+                total: files.length,
+                blobKeys: Object.keys(videoBlobUrls)
+            });
+            // #endregion
+
+            if (loaded === 0) {
                 preloadPercent.innerText = 'Ошибка загрузки';
-                preloadFile.innerText = `Проверьте файл или сеть. ${error.message || error}`;
+                preloadFile.innerText = 'Не удалось загрузить ни одного видео. Проверьте сеть.';
                 preloadRetry.style.display = 'inline-block';
                 startOverlay.classList.add('locked');
-                throw error;
+                throw new Error('All video preloads failed');
+            }
+
+            if (failedFiles.length > 0) {
+                console.warn(`[preload] Пропущено файлов: ${failedFiles.length}`, failedFiles);
+                preloadFile.innerText = `Готово (${loaded}/${files.length}). Пропущено: ${failedFiles.map(f => f.src).join(', ')}`;
             }
 
             mediaReady = true;
