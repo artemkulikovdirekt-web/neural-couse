@@ -25,7 +25,9 @@
         }
 
         body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            min-width: 100dvw; min-height: 100dvh;
             /* Объемный градиент для всего приложения (будет виден после скрытия картинки) */
             background: radial-gradient(circle at 50% 0%, #1a1f2e 0%, #030407 100%);
             font-family: 'Inter', sans-serif;
@@ -36,7 +38,8 @@
         
         /* Картинка для первого экрана (теперь z-index: 0, чтобы быть поверх градиента body) */
         #bg-image {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            position: absolute; inset: 0;
+            width: 100dvw; height: 100dvh;
             background: url('bg.jpg') center/cover no-repeat; 
             z-index: 0; 
             transition: opacity 0.8s ease;
@@ -108,7 +111,9 @@
 
         /* --- Главный экран запуска --- */
         #start-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; inset: 0;
+            width: 100dvw; height: 100dvh;
+            min-width: 100dvw; min-height: 100dvh;
             display: flex; flex-direction: column; 
             z-index: 100;
             background: #030407 url('bg.jpg') center/cover no-repeat;
@@ -207,18 +212,24 @@
         .module-num { 
             font-family: 'Rajdhani', sans-serif; font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;
         }
-        .module-title { font-size: 1.2rem; font-weight: 300; color: #fff; line-height: 1.4; }
+        .module-title { font-size: 1.15rem; font-weight: 500; color: #fff; line-height: 1.35; margin-bottom: 8px; }
+        .module-subtitle { font-size: 0.92rem; font-weight: 300; color: var(--text-muted); line-height: 1.45; }
 
         #module-viewer {
             display: none;
             position: fixed;
             inset: 0;
+            width: 100dvw;
+            height: 100dvh;
             z-index: 900;
             background: var(--bg-base);
             opacity: 0;
             transition: opacity 0.35s ease;
+            overflow: hidden;
         }
         #module-frame {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             border: 0;
@@ -313,7 +324,11 @@
             }
 
             .module-title {
-                font-size: clamp(0.9rem, 2.3vw, 1.15rem);
+                font-size: clamp(0.85rem, 2.1vw, 1.1rem);
+            }
+
+            .module-subtitle {
+                font-size: clamp(0.72rem, 1.7vw, 0.9rem);
             }
 
             #music-player-ui {
@@ -548,6 +563,9 @@
         // Слушатель: когда трек заканчивается, включаем следующий
         bgMusic.addEventListener('ended', nextTrack);
         window.addEventListener('beforeunload', saveMusicState);
+        setInterval(() => {
+            if (!bgMusic.paused) saveMusicState();
+        }, 2000);
 
         function loadMusicState() {
             try {
@@ -617,12 +635,12 @@
 
         // --- ДАННЫЕ И ЛОГИКА КУРСА ---
         const modulesData = [
-            { id: 1, title: "Архитектура LLM" },
-            { id: 2, title: "Генеративная графика" },
-            { id: 3, title: "Синтез аудио" },
-            { id: 4, title: "Синтез видео" },
-            { id: 5, title: "Vibe Coding & Архитектура" },
-            { id: 6, title: "Практикум: Babylon.js" }
+            { id: 1, title: "Архитектура LLM", subtitle: "Что такое LLM и как это работает?" },
+            { id: 2, title: "Художники из пикселей", subtitle: "От мыльных пятен к фотореализму" },
+            { id: 3, title: "Архитектура Звука", subtitle: "Эволюция синтеза: От роботов к живому дыханию" },
+            { id: 4, title: "Синтез видео", subtitle: "Видео — это не просто картинки в ряд" },
+            { id: 5, title: "Vibe Coding & FMV", subtitle: "Программирование логики без кода" },
+            { id: 6, title: "Практикум: Babylon.js", subtitle: "Скоро" }
         ];
 
         // Все модули разблокированы для свободного доступа
@@ -670,7 +688,10 @@
                 
                 card.innerHTML = `
                     <div class="module-num">Модуль 0${m.id}</div>
-                    <div class="module-title">${m.title}</div>
+                    <div>
+                        <div class="module-title">${m.title}</div>
+                        <div class="module-subtitle">${m.subtitle || ''}</div>
+                    </div>
                 `;
 
                 if (!isLocked) {
@@ -688,31 +709,24 @@
         }
 
         function openModule(moduleId) {
-            const isMobileRuntime = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 900 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             // #region agent log
-            window.agentDebugLog('H2', 'index.html:openModule', 'module navigation branch selected', {
+            window.agentDebugLog('H2', 'index.html:openModule', 'module navigation via iframe', {
                 moduleId,
-                isMobileRuntime,
-                pointerCoarse: window.matchMedia('(pointer: coarse)').matches,
                 innerWidth: window.innerWidth,
                 innerHeight: window.innerHeight,
-                visualViewport: window.visualViewport ? { width: window.visualViewport.width, height: window.visualViewport.height, scale: window.visualViewport.scale } : null,
-                willUseIframe: !isMobileRuntime,
-                userAgent: navigator.userAgent
+                bgPaused: bgMusic.paused,
+                currentTrackIdx
             });
             // #endregion
-            if (isMobileRuntime) {
-                saveMusicState();
-                window.location.href = `module${moduleId}.html`;
-                return;
-            }
 
             const dashboard = document.getElementById('dashboard');
             const viewer = document.getElementById('module-viewer');
             const frame = document.getElementById('module-frame');
 
             moduleGameActive = moduleId === 5;
-            document.getElementById('music-player-ui').style.display = moduleGameActive ? 'none' : document.getElementById('music-player-ui').style.display;
+            if (moduleGameActive) {
+                document.getElementById('music-player-ui').style.display = 'none';
+            }
             dashboard.style.opacity = '0';
             dashboard.style.transform = 'scale(0.98)';
             setTimeout(() => {
@@ -736,6 +750,7 @@
                 frame.src = 'about:blank';
                 viewer.style.display = 'none';
                 dashboard.style.display = 'flex';
+                document.getElementById('music-player-ui').style.display = 'flex';
                 requestAnimationFrame(() => {
                     dashboard.style.opacity = '1';
                     dashboard.style.transform = 'scale(1)';

@@ -272,7 +272,58 @@
             box-shadow: 0 0 18px rgba(0, 243, 255, 0.45);
         }
 
-        #mobile-debug-panel {
+        #mobile-debug-panel { display: none !important; }
+
+        .game-fs-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 55;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(0, 243, 255, 0.45);
+            border-radius: 4px;
+            background: rgba(3, 4, 7, 0.75);
+            color: var(--neon-teal);
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.25s;
+            backdrop-filter: blur(6px);
+        }
+        .game-fs-btn:hover {
+            background: rgba(0, 243, 255, 0.15);
+            box-shadow: 0 0 14px rgba(0, 243, 255, 0.35);
+        }
+
+        .game-container.game-fullscreen {
+            position: fixed;
+            inset: 0;
+            width: 100dvw !important;
+            height: 100dvh !important;
+            max-width: none !important;
+            margin: 0 !important;
+            z-index: 99999;
+            border-radius: 0;
+            aspect-ratio: unset;
+            border: none;
+        }
+        body.game-fs-active {
+            overflow: hidden !important;
+            touch-action: none;
+        }
+        body.game-fs-active .module-container {
+            overflow: hidden;
+        }
+        body.game-qte-active {
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #mobile-debug-panel-old {
             position: fixed;
             left: 8px;
             right: 8px;
@@ -346,18 +397,12 @@
 <body>
 
     <div id="orientation-lock">Пожалуйста, переверните устройство</div>
-    <div id="mobile-debug-panel"></div>
+    <div id="mobile-debug-panel-old"></div>
     <script>
         // #region agent log
         window.agentDebugLog = function(hypothesisId, location, message, data) {
             const debugLine = JSON.stringify({ hypothesisId, location, message, data, timestamp: Date.now() });
             try {
-                const panel = document.getElementById('mobile-debug-panel');
-                if (panel) {
-                    panel.style.display = 'block';
-                    panel.textContent += debugLine + '\n';
-                    panel.scrollTop = panel.scrollHeight;
-                }
                 localStorage.setItem('module5DebugLast', debugLine);
             } catch (e) {}
             fetch('http://127.0.0.1:7395/ingest/fe62f7b7-65c1-46b8-b5d3-7c3b5b3d3f37', {
@@ -415,6 +460,8 @@
         <div class="game-container" id="game-area">
             
             <video id="game-video" playsinline preload="none"></video>
+
+            <button type="button" class="game-fs-btn" id="game-fullscreen-btn" title="На весь экран" aria-label="На весь экран">⛶</button>
 
             <div id="start-overlay">
                 <button class="play-game-btn" onclick="startGame()">НАЧАТЬ ИГРУ</button>
@@ -617,6 +664,7 @@
                 src: 'm5-5-door.mp4',
                 type: 'action',
                 next: 'action3',
+                failScene: 'fail2',
                 immediateFail: true, // Тру = моментальная смерть (замедление не висит)
                 qtes: [
                     { time: 0.1, direction: 'rotate_ccw', text: 'КРУТИ ПРОТИВ ЧАСОВОЙ', durationMs: 1000 }
@@ -634,6 +682,10 @@
             },
             'fail1': { 
                 src: 'm5-fail.mp4',
+                type: 'end'
+            },
+            'fail2': { 
+                src: 'm5-fail2.mp4',
                 type: 'end'
             },
             'win': {
@@ -816,15 +868,66 @@
         window.addEventListener('beforeunload', revokeGameVideoBlobs);
 
         function getVideoUrl(src) {
-            return videoBlobUrls[src] || src;
+            if (videoBlobUrls[src]) return videoBlobUrls[src];
+            if (src === 'm5-fail2.mp4' && videoBlobUrls['m5-fail.mp4']) {
+                console.warn('[game] m5-fail2.mp4 недоступен, используется m5-fail.mp4');
+                return videoBlobUrls['m5-fail.mp4'];
+            }
+            return src;
+        }
+
+        let gameFullscreenActive = false;
+        const gameFullscreenBtn = document.getElementById('game-fullscreen-btn');
+
+        function setGameFullscreen(active) {
+            gameFullscreenActive = active;
+            gameArea.classList.toggle('game-fullscreen', active);
+            document.body.classList.toggle('game-fs-active', active);
+            gameFullscreenBtn.innerText = active ? '✕' : '⛶';
+            gameFullscreenBtn.title = active ? 'Выйти из полноэкранного режима' : 'На весь экран';
+            gameFullscreenBtn.setAttribute('aria-label', gameFullscreenBtn.title);
+        }
+
+        function toggleGameFullscreen() {
+            if (gameArea.classList.contains('game-fullscreen')) {
+                if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+                setGameFullscreen(false);
+                return;
+            }
+            setGameFullscreen(true);
+            if (gameArea.requestFullscreen) {
+                gameArea.requestFullscreen().catch(() => {});
+            }
+        }
+
+        gameFullscreenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleGameFullscreen();
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && gameFullscreenActive) {
+                setGameFullscreen(false);
+            }
+        });
+
+        function setQteScrollLock(active) {
+            document.body.classList.toggle('game-qte-active', active);
         }
 
         function playScene(src) {
+            if (!src) return;
             video.pause();
             video.currentTime = 0;
             video.src = getVideoUrl(src);
             video.playbackRate = 1.0;
             video.load();
+            video.onerror = () => {
+                if (src === 'm5-fail2.mp4' && video.src !== getVideoUrl('m5-fail.mp4')) {
+                    console.warn('[game] Ошибка воспроизведения m5-fail2.mp4, fallback на m5-fail.mp4');
+                    playScene('m5-fail.mp4');
+                }
+            };
             video.play().catch(error => {
                 console.error(`Не удалось запустить ${src}`, error);
             });
@@ -875,7 +978,7 @@
         video.addEventListener('timeupdate', () => {
             const sceneData = gameData[currentScene];
             
-            if (currentScene === 'fail1') {
+            if (currentScene === 'fail1' || currentScene === 'fail2') {
                 if (video.currentTime >= 2.5 && !gameOverTriggered) {
                     gameOverTriggered = true;
                     gameOverOverlay.style.display = 'flex'; 
@@ -922,6 +1025,7 @@
         function triggerQTE(qteParams) {
             activeQTE = qteParams;
             video.playbackRate = 0.2; 
+            setQteScrollLock(true);
             
             rotationAngleTotal = 0;
             rotationLastAngle = null;
@@ -950,6 +1054,7 @@
                 clearTimeout(qteTimeout);
                 activeQTE = null;
                 qteOverlay.style.display = 'none';
+                setQteScrollLock(false);
                 
                 video.playbackRate = 1.0; 
                 playSuccessSound();
@@ -963,6 +1068,7 @@
             clearTimeout(qteTimeout);
             activeQTE = null;
             qteOverlay.style.display = 'none';
+            setQteScrollLock(false);
             video.playbackRate = 1.0; // Всегда отключаем слоу-мо
             
             const sceneData = gameData[currentScene];
@@ -990,11 +1096,13 @@
         let touchStartY = 0;
 
         gameArea.addEventListener('touchstart', (e) => {
+            if (activeQTE) e.preventDefault();
             touchStartX = e.touches[0].clientX;
             touchStartY = e.touches[0].clientY;
-        }, {passive: true});
+        }, { passive: false });
 
         gameArea.addEventListener('touchmove', (e) => {
+            if (activeQTE) e.preventDefault();
             if (!activeQTE || activeQTE.direction !== 'rotate_ccw') return;
 
             let rect = gameArea.getBoundingClientRect();
@@ -1021,9 +1129,10 @@
                 }
             }
             rotationLastAngle = angle;
-        }, {passive: true});
+        }, { passive: false });
 
         gameArea.addEventListener('touchend', (e) => {
+            if (activeQTE && activeQTE.direction !== 'rotate_ccw') e.preventDefault();
             if (!activeQTE || activeQTE.direction === 'rotate_ccw') return;
 
             let touchEndX = e.changedTouches[0].clientX;
@@ -1041,7 +1150,7 @@
                 if (dy > 0) resolveQTE('down');
                 else resolveQTE('up');
             }
-        }, {passive: true});
+        }, { passive: false });
 
 
         const AudioContext = window.AudioContext || window.webkitAudioContext;
