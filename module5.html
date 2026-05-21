@@ -272,6 +272,26 @@
             box-shadow: 0 0 18px rgba(0, 243, 255, 0.45);
         }
 
+        #mobile-debug-panel {
+            position: fixed;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            z-index: 999998;
+            display: none;
+            max-height: 38vh;
+            overflow: auto;
+            padding: 10px;
+            background: rgba(3, 4, 7, 0.92);
+            border: 1px solid rgba(0, 243, 255, 0.35);
+            color: #00f3ff;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            user-select: text;
+        }
+
         @media (max-width: 900px) and (orientation: landscape) {
             .module-container {
                 max-width: none;
@@ -326,9 +346,20 @@
 <body>
 
     <div id="orientation-lock">Пожалуйста, переверните устройство</div>
+    <div id="mobile-debug-panel"></div>
     <script>
         // #region agent log
         window.agentDebugLog = function(hypothesisId, location, message, data) {
+            const debugLine = JSON.stringify({ hypothesisId, location, message, data, timestamp: Date.now() });
+            try {
+                const panel = document.getElementById('mobile-debug-panel');
+                if (panel) {
+                    panel.style.display = 'block';
+                    panel.textContent += debugLine + '\n';
+                    panel.scrollTop = panel.scrollHeight;
+                }
+                localStorage.setItem('module5DebugLast', debugLine);
+            } catch (e) {}
             fetch('http://127.0.0.1:7395/ingest/fe62f7b7-65c1-46b8-b5d3-7c3b5b3d3f37', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7bb38a' },
