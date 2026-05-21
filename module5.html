@@ -57,7 +57,13 @@
             background-size: 50px 50px; z-index: -1; pointer-events: none;
         }
 
-        .module-container { width: 100%; max-width: 1100px; padding: 50px 20px; z-index: 10; }
+        .module-container {
+            width: 100%;
+            max-width: 1100px;
+            padding: max(50px, env(safe-area-inset-top, 0px)) 20px 50px;
+            z-index: 10;
+            box-sizing: border-box;
+        }
 
         body.embedded-game {
             display: flex;
@@ -66,13 +72,15 @@
         }
         body.embedded-game .module-container {
             width: 100%;
-            max-width: 1100px;
+            max-width: 100%;
             min-height: 100vh;
-            padding: 50px 20px;
+            padding: max(16px, env(safe-area-inset-top, 0px)) 12px 16px;
+            box-sizing: border-box;
+            overflow-x: hidden;
         }
         body.embedded-game .game-container {
-            width: min(100vw, 1000px);
-            max-width: 1000px;
+            width: 100%;
+            max-width: 100%;
             height: auto;
             margin: 0 auto 40px auto;
             border: 1px solid rgba(0, 243, 255, 0.3);
@@ -103,10 +111,11 @@
 
         /* ИГРОВОЙ БЛОК */
         .game-container {
-            width: min(100vw, 1000px); max-width: 1000px; margin: 0 auto 40px auto;
+            width: 100%; max-width: 1000px; margin: 0 auto 40px auto;
             background: #000; border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 6px;
             box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 243, 255, 0.1);
             position: relative; overflow: hidden; aspect-ratio: 16/9;
+            box-sizing: border-box;
         }
 
         #game-video {
@@ -139,33 +148,30 @@
         }
         
         .choice-btn {
-            background: transparent; border: none; padding: 10px 20px; cursor: pointer; transition: 0.3s; text-align: center;
-            display: flex; flex-direction: column; align-items: center; min-width: 280px;
+            background: transparent; border: none; padding: 12px 24px; cursor: pointer; transition: 0.25s; text-align: center;
+            display: flex; flex-direction: column; align-items: center; min-width: 240px;
+            border-bottom: 1px solid transparent;
         }
 
-        /* Заголовок действия */
-        .choice-action {
-            font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 500;
-            letter-spacing: 5px; color: #fff; text-transform: uppercase; margin-bottom: 8px;
-            position: relative; padding-bottom: 6px; transition: 0.3s; text-shadow: 0 0 5px rgba(255,255,255,0.2);
-        }
-        /* Тонкая линия-разделитель */
-        .choice-action::after {
-            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-            width: 140%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: 0.3s;
-        }
-
-        /* Текст реплики (ТОНКИЙ, БИРЮЗОВЫЙ) */
         .choice-text {
             font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
-            color: var(--neon-teal); transition: 0.3s; opacity: 0.8;
+            color: var(--neon-teal); transition: 0.25s; opacity: 0.85;
+            line-height: 1.45;
         }
 
-        /* Эффекты при наведении */
-        .choice-btn:hover .choice-action { color: var(--neon-teal); text-shadow: 0 0 10px rgba(0, 243, 255, 0.6); }
-        .choice-btn:hover .choice-action::after { background: linear-gradient(90deg, transparent, var(--neon-teal), transparent); box-shadow: 0 0 5px var(--neon-teal); }
-        .choice-btn:hover .choice-text { opacity: 1; text-shadow: 0 0 8px rgba(0, 243, 255, 0.4); }
+        .choice-btn:hover .choice-text,
+        .choice-btn:active .choice-text,
+        .choice-btn.selected .choice-text {
+            opacity: 1;
+            color: #fff;
+            text-shadow: 0 0 12px rgba(0, 243, 255, 0.65);
+        }
+        .choice-btn:hover,
+        .choice-btn:active,
+        .choice-btn.selected {
+            border-bottom-color: var(--neon-teal);
+            box-shadow: 0 4px 18px rgba(0, 243, 255, 0.15);
+        }
 
         @media (max-width: 768px) {
             #choice-overlay { flex-direction: column; gap: 20px; bottom: 8%; }
@@ -276,8 +282,8 @@
 
         .game-fs-btn {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
+            bottom: 14px;
+            right: 14px;
             z-index: 55;
             width: 36px;
             height: 36px;
@@ -352,9 +358,9 @@
                 margin: 0;
             }
             .game-container {
-                width: calc(100vw - 28px);
+                width: 100%;
                 height: auto;
-                max-width: none;
+                max-width: 100%;
                 margin: 0 auto 22px auto;
                 border-radius: 6px;
                 aspect-ratio: 16/9;
@@ -468,12 +474,10 @@
             </div>
 
             <div id="choice-overlay">
-                <div class="choice-btn" onclick="makeChoice('choice1')">
-                    <div class="choice-action">1 ВАРИАНТ</div>
+                <div class="choice-btn" onclick="makeChoice('choice1', this)">
                     <div class="choice-text">«Оно бронированное. Я знаю.»</div>
                 </div>
-                <div class="choice-btn" onclick="makeChoice('choice2')">
-                    <div class="choice-action">2 ВАРИАНТ</div>
+                <div class="choice-btn" onclick="makeChoice('choice2', this)">
                     <div class="choice-text">«И кто ты? Я чувствую опасность, что делать?»</div>
                 </div>
             </div>
@@ -537,8 +541,12 @@
         }
 
         function goBackToModules() {
+            if (window.stopGameBgm) window.stopGameBgm();
             if (IS_EMBEDDED_MODULE && window.parent) {
-                window.parent.postMessage({ type: 'course:bgm-game-end' }, '*');
+                if (gameSessionActive) {
+                    window.parent.postMessage({ type: 'course:bgm-game-end' }, '*');
+                }
+                window.parent.postMessage({ type: 'course:module-complete', moduleId: 5 }, '*');
                 window.parent.postMessage({ type: 'course:close-module' }, '*');
                 return false;
             }
@@ -598,6 +606,7 @@
 
         function bindBgMusicMediaGuards() {
             document.querySelectorAll('audio, video').forEach(media => {
+                if (media.id === 'game-video') return;
                 media.addEventListener('play', pauseBgMusicForMedia);
                 media.addEventListener('ended', () => setTimeout(resumeBgMusicAfterMedia, 0));
                 media.addEventListener('pause', () => setTimeout(resumeBgMusicAfterMedia, 0));
@@ -642,10 +651,15 @@
             'choice1': {
                 src: 'm5-2-ans1.mp4',
                 type: 'cinematic',
-                next: 'action1' 
+                next: 'bridge35'
             },
             'choice2': {
                 src: 'm5-3-ans2.mp4',
+                type: 'cinematic',
+                next: 'bridge35'
+            },
+            'bridge35': {
+                src: 'm5-3-5.mp4',
                 type: 'cinematic',
                 next: 'action1'
             },
@@ -674,8 +688,8 @@
                 src: 'm5-6-action.mp4',
                 type: 'action',
                 next: 'win',
-                failScene: 'fail1',
-                immediateFail: false, // Фолс = видео доиграет до конца при ошибке
+                failScene: 'fail3',
+                immediateFail: true,
                 qtes: [
                     { time: 1.5, direction: 'right', text: 'ВПРАВО', durationMs: 1000 }
                 ]
@@ -686,6 +700,10 @@
             },
             'fail2': { 
                 src: 'm5-fail2.mp4',
+                type: 'end'
+            },
+            'fail3': {
+                src: 'm5-fail3.mp4',
                 type: 'end'
             },
             'win': {
@@ -867,11 +885,67 @@
 
         window.addEventListener('beforeunload', revokeGameVideoBlobs);
 
+        const GAME_BGM_TRACKS = ['m5-game-track1.mp3', 'm5-game-track2.mp3'];
+        const GAME_BGM_VOLUME = 0.35;
+        const DIALOGUE_SCENES = new Set(['intro', 'choice1', 'choice2']);
+        const ACTION_BGM_SCENES = new Set(['bridge35', 'action1', 'action2', 'action3', 'fail1', 'fail2', 'fail3']);
+
+        let gameBgm = null;
+        let gameBgmPhase = 0;
+        let gameBgmCurrentSrc = '';
+
+        function initGameBgm() {
+            if (!gameBgm) {
+                gameBgm = new Audio();
+                gameBgm.volume = GAME_BGM_VOLUME;
+                gameBgm.loop = true;
+            }
+        }
+
+        function startGameBgmPhase(phase) {
+            if (!gameSessionActive) return;
+            initGameBgm();
+            const trackSrc = GAME_BGM_TRACKS[phase - 1];
+            if (!trackSrc) return;
+            if (gameBgmPhase === phase && gameBgmCurrentSrc === trackSrc && !gameBgm.paused) return;
+            gameBgmPhase = phase;
+            gameBgmCurrentSrc = trackSrc;
+            gameBgm.src = trackSrc;
+            gameBgm.currentTime = 0;
+            gameBgm.play().catch(() => {});
+        }
+
+        function stopGameBgm() {
+            if (gameBgm) {
+                gameBgm.pause();
+                gameBgm.currentTime = 0;
+            }
+            gameBgmPhase = 0;
+            gameBgmCurrentSrc = '';
+        }
+        window.stopGameBgm = stopGameBgm;
+
+        function syncGameBgmForScene(sceneId) {
+            if (!gameSessionActive) return;
+            if (DIALOGUE_SCENES.has(sceneId)) {
+                startGameBgmPhase(1);
+            } else if (ACTION_BGM_SCENES.has(sceneId)) {
+                startGameBgmPhase(2);
+            }
+        }
+
+        function getFailFallbackSrc(src) {
+            if (src === 'm5-fail2.mp4' && videoBlobUrls['m5-fail.mp4']) return 'm5-fail.mp4';
+            if (src === 'm5-fail3.mp4' && videoBlobUrls['m5-fail.mp4']) return 'm5-fail.mp4';
+            return src;
+        }
+
         function getVideoUrl(src) {
             if (videoBlobUrls[src]) return videoBlobUrls[src];
-            if (src === 'm5-fail2.mp4' && videoBlobUrls['m5-fail.mp4']) {
-                console.warn('[game] m5-fail2.mp4 недоступен, используется m5-fail.mp4');
-                return videoBlobUrls['m5-fail.mp4'];
+            const fallback = getFailFallbackSrc(src);
+            if (fallback !== src && videoBlobUrls[fallback]) {
+                console.warn(`[game] ${src} недоступен, используется ${fallback}`);
+                return videoBlobUrls[fallback];
             }
             return src;
         }
@@ -923,9 +997,10 @@
             video.playbackRate = 1.0;
             video.load();
             video.onerror = () => {
-                if (src === 'm5-fail2.mp4' && video.src !== getVideoUrl('m5-fail.mp4')) {
-                    console.warn('[game] Ошибка воспроизведения m5-fail2.mp4, fallback на m5-fail.mp4');
-                    playScene('m5-fail.mp4');
+                const fallback = getFailFallbackSrc(src);
+                if (fallback !== src) {
+                    console.warn(`[game] Ошибка воспроизведения ${src}, fallback на ${fallback}`);
+                    playScene(fallback);
                 }
             };
             video.play().catch(error => {
@@ -948,6 +1023,7 @@
                 window.parent.postMessage({ type: 'course:bgm-game-start' }, '*');
             }
             startOverlay.style.display = 'none';
+            startGameBgmPhase(1);
             loadScene('intro');
         }
 
@@ -960,6 +1036,7 @@
             gameOverOverlay.style.display = 'none';
             choiceOverlay.style.display = 'none';
             qteOverlay.style.display = 'none';
+            syncGameBgmForScene(sceneId);
 
             if (sceneData.type === 'end') {
                 if (sceneData.src !== '') {
@@ -978,7 +1055,7 @@
         video.addEventListener('timeupdate', () => {
             const sceneData = gameData[currentScene];
             
-            if (currentScene === 'fail1' || currentScene === 'fail2') {
+            if (currentScene === 'fail1' || currentScene === 'fail2' || currentScene === 'fail3') {
                 if (video.currentTime >= 2.5 && !gameOverTriggered) {
                     gameOverTriggered = true;
                     gameOverOverlay.style.display = 'flex'; 
@@ -1017,7 +1094,11 @@
             }
         }
 
-        function makeChoice(nextSceneId) {
+        function makeChoice(nextSceneId, btnEl) {
+            if (btnEl) {
+                choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+                btnEl.classList.add('selected');
+            }
             choiceOverlay.style.display = 'none';
             loadScene(nextSceneId);
         }

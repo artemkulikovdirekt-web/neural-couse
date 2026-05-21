@@ -103,11 +103,11 @@
         @media(max-width: 800px) { .comparison-grid { grid-template-columns: 1fr; } }
         
         .video-box {
-            background: #040508; border: 1px solid #1e293b; border-radius: 6px;
+            background: #000; border: 1px solid #1e293b; border-radius: 6px;
             overflow: hidden; position: relative; cursor: pointer; transition: 0.3s;
         }
         .video-box video {
-            width: 100%; height: 250px; object-fit: cover; display: block;
+            width: 100%; height: 250px; object-fit: contain; display: block; background: #000;
         }
         .video-label {
             position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.7);
@@ -125,13 +125,13 @@
         @media(max-width: 800px) { .director-grid { grid-template-columns: 1fr; } }
 
         .main-player {
-            width: 100%; height: 400px; background: #040508; border: 1px solid #1e293b;
+            width: 100%; height: 400px; background: #000; border: 1px solid #1e293b;
             border-radius: 6px; position: relative; overflow: hidden;
             display: flex; justify-content: center; align-items: center;
         }
         .main-player video {
-            width: 100%; height: 100%; object-fit: cover; transition: opacity 0.3s ease;
-            position: relative; z-index: 2;
+            width: 100%; height: 100%; object-fit: contain; transition: opacity 0.3s ease;
+            position: relative; z-index: 2; background: #000;
         }
 
         .controls-panel { display: flex; flex-direction: column; gap: 15px; }
@@ -304,6 +304,7 @@
 
         function goBackToModules() {
             if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:module-complete', moduleId: 4 }, '*');
                 window.parent.postMessage({ type: 'course:close-module' }, '*');
                 return false;
             }
@@ -434,6 +435,22 @@
             noise.start(); osc.start(); osc.stop(audioCtx.currentTime + 0.01);
         }
 
+        function primeVideoPreview(video) {
+            if (!video || video.dataset.previewPrimed === '1') return;
+            const prime = () => {
+                try {
+                    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                        video.currentTime = 0.01;
+                        video.pause();
+                        video.dataset.previewPrimed = '1';
+                    }
+                } catch (e) {}
+            };
+            video.addEventListener('loadeddata', prime, { once: true });
+            video.addEventListener('loadedmetadata', prime, { once: true });
+            if (video.readyState >= HTMLMediaElement.HAVE_METADATA) prime();
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('click', initSysAudio, { once: true });
             document.querySelectorAll('.interactive-btn').forEach(btn => {
@@ -441,10 +458,13 @@
                 btn.addEventListener('mousedown', playClickSound);
             });
 
+            document.querySelectorAll('.video-box video, .main-player video').forEach(primeVideoPreview);
+
             document.getElementById('btn-tracking').classList.add('active');
             const directorVideo = document.getElementById('director-video');
             directorVideo.src = cameraVideos.tracking;
             directorVideo.load();
+            primeVideoPreview(directorVideo);
         });
 
         // --- ЛОГИКА СРАВНЕНИЯ ВИДЕО ---

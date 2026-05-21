@@ -334,6 +334,7 @@
 
         function goBackToModules() {
             if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:module-complete', moduleId: 1 }, '*');
                 window.parent.postMessage({ type: 'course:close-module' }, '*');
                 return false;
             }

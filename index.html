@@ -27,13 +27,21 @@
         body, html {
             margin: 0; padding: 0;
             width: 100%; height: 100%;
-            min-width: 100dvw; min-height: 100dvh;
-            /* Объемный градиент для всего приложения (будет виден после скрытия картинки) */
+            max-width: 100vw;
+            min-height: 100dvh;
             background: radial-gradient(circle at 50% 0%, #1a1f2e 0%, #030407 100%);
             font-family: 'Inter', sans-serif;
             color: var(--text-main);
             overflow: hidden;
             display: flex; justify-content: center; align-items: center;
+        }
+
+        #grid-bg-wrap {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: none;
         }
         
         /* Картинка для первого экрана (теперь z-index: 0, чтобы быть поверх градиента body) */
@@ -45,17 +53,16 @@
             transition: opacity 0.8s ease;
         }
         
-        /* Сетка для дашборда */
+        /* Сетка для дашборда — внутри clip-контейнера, чтобы scale не создавал скролл */
         .grid-bg {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-image: 
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
-            z-index: 1; /* Сетка поверх картинки и фона */
             transform: perspective(500px) rotateX(60deg) translateY(-100px) scale(3);
             animation: gridMove 20s linear infinite;
-            opacity: 0; 
+            opacity: 0;
             transition: opacity 1s ease;
         }
 
@@ -64,13 +71,14 @@
             100% { background-position: 0 50px; }
         }
 
-        /* --- МУЗЫКАЛЬНЫЙ ПЛЕЕР (ВЕРХНЯЯ ПАНЕЛЬ) --- */
+        /* --- МУЗЫКАЛЬНЫЙ ПЛЕЕР (в шапке dashboard) --- */
         #music-player-ui {
-            position: fixed; top: 25px; right: 30px; z-index: 1000;
+            position: static;
+            flex-shrink: 0;
             display: none;
             background: rgba(10, 11, 16, 0.8);
             border: var(--border-teal); border-radius: 6px;
-            padding: 10px 20px; align-items: center; gap: 20px;
+            padding: 8px 14px; align-items: center; gap: 12px;
             backdrop-filter: blur(10px);
             box-shadow: 0 5px 20px rgba(0, 243, 255, 0.1);
         }
@@ -176,12 +184,30 @@
             box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
             padding: 40px; box-sizing: border-box; z-index: 10; flex-direction: column;
             opacity: 0; transform: scale(0.95); transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            overflow: hidden;
+            padding-top: max(40px, env(safe-area-inset-top, 0px));
         }
         .dashboard-header {
             font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; color: #fff;
             margin-bottom: 30px; text-transform: uppercase; letter-spacing: 4px;
             border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;
             display: flex; justify-content: space-between; align-items: center;
+            gap: 16px;
+            flex-wrap: nowrap;
+        }
+        .dashboard-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+        .dashboard-subtitle {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 400;
         }
         
         .modules-grid {
@@ -288,24 +314,40 @@
                 font-size: clamp(0.95rem, 2.4vw, 1.2rem);
             }
 
+            #grid-bg-wrap { width: 100dvw; height: 100dvh; }
+            .grid-bg { transform: perspective(500px) rotateX(60deg) translateY(-100px) scale(1.4); }
+
             #dashboard {
                 width: 100dvw;
                 height: 100dvh;
                 max-width: none;
                 border-radius: 0;
                 padding: clamp(14px, 3vw, 28px);
+                padding-top: max(clamp(14px, 3vw, 28px), env(safe-area-inset-top, 0px));
                 margin: 0;
+                overflow: hidden;
             }
 
             .dashboard-header {
-                font-size: clamp(1rem, 2.8vw, 1.5rem);
+                font-size: clamp(0.95rem, 2.8vw, 1.5rem);
                 margin-bottom: clamp(12px, 3vh, 22px);
                 padding-bottom: 10px;
+                gap: 10px;
             }
 
-            .dashboard-header span:last-child {
-                font-size: clamp(0.65rem, 1.5vw, 0.9rem) !important;
+            .dashboard-subtitle {
+                font-size: clamp(0.55rem, 1.4vw, 0.75rem) !important;
             }
+
+            #music-player-ui {
+                padding: 4px 8px;
+                gap: 8px;
+                transform: scale(0.88);
+                transform-origin: center right;
+            }
+            .music-label { font-size: 0.65rem; letter-spacing: 1px; }
+            .music-track-name { font-size: 0.72rem; }
+            .music-btn { font-size: 1rem; }
 
             .modules-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -329,15 +371,6 @@
 
             .module-subtitle {
                 font-size: clamp(0.72rem, 1.7vw, 0.9rem);
-            }
-
-            #music-player-ui {
-                top: 8px;
-                right: 10px;
-                padding: 6px 10px;
-                gap: 10px;
-                transform: scale(0.82);
-                transform-origin: top right;
             }
 
             #module-frame {
@@ -432,18 +465,7 @@
     </script>
 
     <div id="bg-image"></div>
-    <div class="grid-bg"></div>
-
-    <div id="music-player-ui">
-        <div class="music-info">
-            <div class="music-label">BGM.SYSTEM</div>
-            <div class="music-track-name" id="track-name-display">track_01.mp3</div>
-        </div>
-        <div class="music-controls">
-            <button class="music-btn interactive-btn" onclick="toggleMute()" id="mute-btn" title="Вкл/Выкл звук">🔊</button>
-            <button class="music-btn interactive-btn" onclick="nextTrack()" title="Следующий трек">⏭</button>
-        </div>
-    </div>
+    <div id="grid-bg-wrap"><div class="grid-bg"></div></div>
 
     <div id="start-screen">
         <div id="start-screen-top-info">
@@ -463,8 +485,20 @@
 
     <div id="dashboard">
         <div class="dashboard-header">
-            <span>Учебные модули</span>
-            <span style="font-size: 1rem; color: var(--text-muted); font-family: 'Inter', sans-serif;">ВЫБЕРИТЕ БЛОК ДЛЯ ЗАГРУЗКИ</span>
+            <div class="dashboard-header-left">
+                <span>Учебные модули</span>
+                <span class="dashboard-subtitle">ВЫБЕРИТЕ БЛОК ДЛЯ ЗАГРУЗКИ</span>
+            </div>
+            <div id="music-player-ui">
+                <div class="music-info">
+                    <div class="music-label">BGM.SYSTEM</div>
+                    <div class="music-track-name" id="track-name-display">track_01.mp3</div>
+                </div>
+                <div class="music-controls">
+                    <button class="music-btn interactive-btn" onclick="toggleMute()" id="mute-btn" title="Вкл/Выкл звук">🔊</button>
+                    <button class="music-btn interactive-btn" onclick="nextTrack()" title="Следующий трек">⏭</button>
+                </div>
+            </div>
         </div>
         <div class="modules-grid" id="modules-grid"></div>
     </div>
@@ -643,8 +677,34 @@
             { id: 6, title: "Практикум: Babylon.js", subtitle: "Скоро" }
         ];
 
-        // Все модули разблокированы для свободного доступа
-        let progress = 6; 
+        const PROGRESS_KEY = 'courseUnlockedModule';
+        const WATCHED_VIDEOS_KEY = 'courseWatchedVideos';
+
+        function loadProgress() {
+            const val = parseInt(localStorage.getItem(PROGRESS_KEY) || '0', 10);
+            return Number.isFinite(val) ? Math.max(0, Math.min(val, 5)) : 0;
+        }
+
+        function saveProgress(val) {
+            localStorage.setItem(PROGRESS_KEY, String(val));
+        }
+
+        function loadWatchedVideos() {
+            try {
+                return JSON.parse(localStorage.getItem(WATCHED_VIDEOS_KEY)) || { video1: false, video2: false, video3: false };
+            } catch (e) {
+                return { video1: false, video2: false, video3: false };
+            }
+        }
+
+        function saveWatchedVideos() {
+            localStorage.setItem(WATCHED_VIDEOS_KEY, JSON.stringify(watchedVideos));
+        }
+
+        let progress = loadProgress();
+        let watchedVideos = loadWatchedVideos();
+        let pendingStoryVideo = null;
+        let dashboardVisible = false;
 
         function initCourse() {
             initAudio(); 
@@ -663,8 +723,10 @@
                 
                 // Запускаем видео, а после него - музыку и дашборд
                 playVideo('video1.mp4', () => {
+                    watchedVideos.video1 = true;
+                    saveWatchedVideos();
                     showDashboard();
-                    startPlaylist(); // Включаем музыку после стартового видео
+                    startPlaylist();
                 });
             }, 800);
         }
@@ -672,17 +734,25 @@
         function showDashboard() {
             const dashboard = document.getElementById('dashboard');
             dashboard.style.display = 'flex';
+            dashboardVisible = true;
             
             setTimeout(() => {
                 dashboard.style.opacity = '1';
                 dashboard.style.transform = 'scale(1)';
             }, 50);
 
+            renderModulesGrid();
+            if (!moduleGameActive) {
+                document.getElementById('music-player-ui').style.display = 'flex';
+            }
+        }
+
+        function renderModulesGrid() {
             const grid = document.getElementById('modules-grid');
             grid.innerHTML = '';
 
             modulesData.forEach((m, index) => {
-                const isLocked = index > progress;
+                const isLocked = m.id === 6 || index > progress;
                 const card = document.createElement('div');
                 card.className = `module-card interactive-btn ${isLocked ? 'locked' : ''}`;
                 
@@ -743,6 +813,8 @@
             const dashboard = document.getElementById('dashboard');
             const viewer = document.getElementById('module-viewer');
             const frame = document.getElementById('module-frame');
+            const storyToPlay = pendingStoryVideo;
+            pendingStoryVideo = null;
 
             viewer.style.opacity = '0';
             setTimeout(() => {
@@ -750,13 +822,26 @@
                 frame.src = 'about:blank';
                 viewer.style.display = 'none';
                 dashboard.style.display = 'flex';
-                document.getElementById('music-player-ui').style.display = 'flex';
+                dashboardVisible = true;
+                renderModulesGrid();
                 requestAnimationFrame(() => {
                     dashboard.style.opacity = '1';
                     dashboard.style.transform = 'scale(1)';
                 });
                 clearTimeout(moduleResumeTimer);
-                resumeBgMusicFromModuleMedia();
+
+                if (storyToPlay) {
+                    if (storyToPlay === 'video2.mp4') watchedVideos.video2 = true;
+                    if (storyToPlay === 'video3.mp4') watchedVideos.video3 = true;
+                    saveWatchedVideos();
+                    playVideo(storyToPlay, () => {
+                        showDashboard();
+                        startPlaylist();
+                    });
+                } else {
+                    document.getElementById('music-player-ui').style.display = 'flex';
+                    resumeBgMusicFromModuleMedia();
+                }
             }, 300);
         }
 
@@ -776,6 +861,19 @@
 
             if (event.data.type === 'course:close-module') {
                 closeModule();
+            }
+            if (event.data.type === 'course:module-complete') {
+                const moduleId = Number(event.data.moduleId);
+                if (Number.isFinite(moduleId) && moduleId >= 1 && moduleId <= 5) {
+                    progress = Math.max(progress, moduleId);
+                    saveProgress(progress);
+                    if (moduleId === 3 && !watchedVideos.video2) {
+                        pendingStoryVideo = 'video2.mp4';
+                    }
+                    if (moduleId === 5 && !watchedVideos.video3) {
+                        pendingStoryVideo = 'video3.mp4';
+                    }
+                }
             }
             if (event.data.type === 'course:bgm-pause') {
                 pauseBgMusicForModuleMedia();
@@ -869,6 +967,8 @@
                 document.getElementById('start-screen').style.display = 'none';
                 document.getElementById('bg-image').style.display = 'none';
                 document.querySelector('.grid-bg').style.opacity = '0.15';
+                progress = loadProgress();
+                watchedVideos = loadWatchedVideos();
                 showDashboard();
                 startPlaylist();
                 history.replaceState(null, '', 'index.html');
