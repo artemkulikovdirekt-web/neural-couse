@@ -46,10 +46,8 @@
             letter-spacing: 3px;
             text-shadow: 0 0 10px cyan, 0 0 24px rgba(0, 243, 255, 0.45);
         }
-        @media (orientation: portrait) and (max-width: 900px) {
-            #orientation-lock { display: flex; }
-            body { overflow: hidden; }
-        }
+        body.orientation-locked #orientation-lock { display: flex; }
+        body.orientation-locked { overflow: hidden; }
 
         .grid-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -62,32 +60,25 @@
         .module-container { width: 100%; max-width: 1100px; padding: 50px 20px; z-index: 10; }
 
         body.embedded-game {
-            display: block;
-            overflow: hidden;
-        }
-        body.embedded-game .grid-bg,
-        body.embedded-game .module-main-title,
-        body.embedded-game .loft-block,
-        body.embedded-game .controls-hint {
-            display: none;
+            display: flex;
+            overflow-x: hidden;
+            overflow-y: auto;
         }
         body.embedded-game .module-container {
-            max-width: none;
-            height: 100vh;
-            padding: 0;
+            width: 100%;
+            max-width: 1100px;
+            min-height: 100vh;
+            padding: 50px 20px;
         }
         body.embedded-game .game-container {
-            width: 100vw;
-            max-width: none;
-            height: 100vh;
-            margin: 0;
-            border: 0;
-            border-radius: 0;
-            aspect-ratio: auto;
-            box-shadow: none;
-        }
-        body.embedded-game .module-back-wrap {
-            display: none;
+            width: min(100vw, 1000px);
+            max-width: 1000px;
+            height: auto;
+            margin: 0 auto 40px auto;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 6px;
+            aspect-ratio: 16/9;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 243, 255, 0.1);
         }
 
         .module-main-title {
@@ -240,6 +231,15 @@
             color: #cbd5e1;
             margin-bottom: 18px;
         }
+        .preload-file {
+            min-height: 1.2em;
+            margin-bottom: 14px;
+            color: #94a3b8;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: none;
+        }
         .preload-bar {
             width: min(420px, 70vw);
             height: 3px;
@@ -253,28 +253,40 @@
             box-shadow: 0 0 18px var(--neon-teal);
             transition: width 0.25s ease;
         }
+        .preload-retry {
+            display: none;
+            margin-top: 20px;
+            padding: 12px 28px;
+            border: 1px solid rgba(0, 243, 255, 0.45);
+            border-radius: 4px;
+            background: rgba(0, 243, 255, 0.06);
+            color: var(--neon-teal);
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+        }
+        .preload-retry:hover {
+            background: var(--neon-teal);
+            color: #030407;
+            box-shadow: 0 0 18px rgba(0, 243, 255, 0.45);
+        }
 
         @media (max-width: 900px) and (orientation: landscape) {
             .module-container {
                 max-width: none;
                 width: 100vw;
-                height: 100vh;
-                padding: 0;
+                min-height: 100vh;
+                padding: 18px 14px;
                 margin: 0;
-            }
-            .module-main-title,
-            .loft-block,
-            .controls-hint {
-                display: none;
             }
             .game-container {
-                width: 100vw;
-                height: 100vh;
+                width: calc(100vw - 28px);
+                height: auto;
                 max-width: none;
-                margin: 0;
-                border: 0;
-                border-radius: 0;
-                aspect-ratio: auto;
+                margin: 0 auto 22px auto;
+                border-radius: 6px;
+                aspect-ratio: 16/9;
             }
             #choice-overlay {
                 bottom: 8%;
@@ -288,9 +300,6 @@
             .play-game-btn {
                 font-size: clamp(1rem, 3vw, 1.5rem);
                 padding: 14px 34px;
-            }
-            .module-back-wrap {
-                display: none;
             }
         }
 
@@ -317,6 +326,24 @@
 <body>
 
     <div id="orientation-lock">Пожалуйста, переверните устройство</div>
+    <script>
+        (function initOrientationLock() {
+            const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const getViewport = () => {
+                const vv = window.visualViewport;
+                return { width: vv ? vv.width : window.innerWidth, height: vv ? vv.height : window.innerHeight };
+            };
+            const updateOrientationLock = () => {
+                const viewport = getViewport();
+                document.body.classList.toggle('orientation-locked', isTouchDevice() && viewport.height > viewport.width);
+            };
+            window.addEventListener('resize', updateOrientationLock);
+            window.addEventListener('orientationchange', () => setTimeout(updateOrientationLock, 250));
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', updateOrientationLock);
+            updateOrientationLock();
+            document.addEventListener('DOMContentLoaded', updateOrientationLock);
+        })();
+    </script>
 
     <div class="grid-bg"></div>
 
@@ -363,9 +390,11 @@
             <div id="game-preload-overlay">
                 <div class="preload-title">Загрузка медиа</div>
                 <div class="preload-percent" id="preload-percent">0%</div>
+                <div class="preload-file" id="preload-file"></div>
                 <div class="preload-bar">
                     <div class="preload-fill" id="preload-fill"></div>
                 </div>
+                <button class="preload-retry" id="preload-retry" onclick="retryGamePreload()">Повторить загрузку</button>
             </div>
 
         </div>
@@ -406,6 +435,7 @@
 
         function goBackToModules() {
             if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-game-end' }, '*');
                 window.parent.postMessage({ type: 'course:close-module' }, '*');
                 return false;
             }
@@ -442,7 +472,7 @@
                 window.parent.postMessage({ type: 'course:bgm-pause' }, '*');
                 return;
             }
-            bgResumeAfterMedia = !bgMusic.paused;
+            if (!bgMusic.paused) bgResumeAfterMedia = true;
             bgMusic.pause();
             saveBgMusicState();
         }
@@ -562,7 +592,9 @@
         const gameOverOverlay = document.getElementById('game-over-overlay');
         const preloadOverlay = document.getElementById('game-preload-overlay');
         const preloadPercent = document.getElementById('preload-percent');
+        const preloadFile = document.getElementById('preload-file');
         const preloadFill = document.getElementById('preload-fill');
+        const preloadRetry = document.getElementById('preload-retry');
         const qteText = document.getElementById('qte-text');
         const qteIcon = document.getElementById('qte-icon');
         const qteTimerBar = document.getElementById('qte-timer');
@@ -578,6 +610,32 @@
         let rotationLastAngle = null;
         const videoBlobUrls = {};
         let mediaReady = false;
+        const FETCH_TIMEOUT_MS = 45000;
+
+        function revokeGameVideoBlobs() {
+            Object.values(videoBlobUrls).forEach(url => URL.revokeObjectURL(url));
+            Object.keys(videoBlobUrls).forEach(key => delete videoBlobUrls[key]);
+        }
+
+        async function fetchVideoBlob(src) {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+            try {
+                const response = await fetch(src, {
+                    cache: 'force-cache',
+                    signal: controller.signal
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                return await response.blob();
+            } finally {
+                clearTimeout(timeout);
+            }
+        }
 
         async function preloadAllGameVideos() {
             const files = [...new Set(
@@ -587,30 +645,44 @@
             )];
 
             let loaded = 0;
+            mediaReady = false;
+            revokeGameVideoBlobs();
             startOverlay.classList.add('locked');
             preloadOverlay.style.display = 'flex';
+            preloadRetry.style.display = 'none';
             preloadPercent.innerText = '0%';
+            preloadFile.innerText = 'Подготовка списка файлов...';
             preloadFill.style.width = '0%';
 
-            await Promise.all(files.map(async (src) => {
-                const response = await fetch(src, { cache: 'force-cache' });
-                if (!response.ok) {
-                    throw new Error(`Не удалось загрузить ${src}`);
-                }
+            try {
+                await Promise.all(files.map(async (src) => {
+                    preloadFile.innerText = `Загрузка: ${src}`;
+                    const blob = await fetchVideoBlob(src);
+                    videoBlobUrls[src] = URL.createObjectURL(blob);
 
-                const blob = await response.blob();
-                videoBlobUrls[src] = URL.createObjectURL(blob);
-
-                loaded++;
-                const percent = Math.round((loaded / files.length) * 100);
-                preloadPercent.innerText = `${percent}%`;
-                preloadFill.style.width = `${percent}%`;
-            }));
+                    loaded++;
+                    const percent = Math.round((loaded / files.length) * 100);
+                    preloadPercent.innerText = `${percent}%`;
+                    preloadFill.style.width = `${percent}%`;
+                }));
+            } catch (error) {
+                preloadPercent.innerText = 'Ошибка загрузки';
+                preloadFile.innerText = `Проверьте файл или сеть. ${error.message || error}`;
+                preloadRetry.style.display = 'inline-block';
+                startOverlay.classList.add('locked');
+                throw error;
+            }
 
             mediaReady = true;
             preloadOverlay.style.display = 'none';
             startOverlay.classList.remove('locked');
         }
+
+        function retryGamePreload() {
+            preloadAllGameVideos().catch(error => console.error(error));
+        }
+
+        window.addEventListener('beforeunload', revokeGameVideoBlobs);
 
         function getVideoUrl(src) {
             return videoBlobUrls[src] || src;
@@ -631,7 +703,7 @@
             if (!mediaReady) return;
             gameSessionActive = true;
             if (IS_EMBEDDED_MODULE && window.parent) {
-                window.parent.postMessage({ type: 'course:bgm-pause' }, '*');
+                window.parent.postMessage({ type: 'course:bgm-game-start' }, '*');
             }
             startOverlay.style.display = 'none';
             loadScene('intro');

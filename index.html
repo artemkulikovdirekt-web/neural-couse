@@ -103,10 +103,8 @@
             letter-spacing: 3px;
             text-shadow: 0 0 10px cyan, 0 0 24px rgba(0, 243, 255, 0.45);
         }
-        @media (orientation: portrait) and (max-width: 900px) {
-            #orientation-lock { display: flex; }
-            body { overflow: hidden; }
-        }
+        body.orientation-locked #orientation-lock { display: flex; }
+        body.orientation-locked { overflow: hidden; }
 
         /* --- Главный экран запуска --- */
         #start-screen {
@@ -228,6 +226,111 @@
             background: var(--bg-base);
         }
 
+        @media (max-width: 900px) and (orientation: landscape) {
+            body, html {
+                width: 100dvw;
+                height: 100dvh;
+                min-width: 100dvw;
+                min-height: 100dvh;
+                overflow: hidden;
+            }
+
+            #bg-image,
+            .grid-bg,
+            #start-screen,
+            #dashboard,
+            #module-viewer,
+            #fullscreen-video-overlay {
+                width: 100dvw;
+                height: 100dvh;
+            }
+
+            #start-screen {
+                padding: clamp(16px, 3vw, 28px);
+            }
+
+            #start-screen-top-info {
+                top: clamp(16px, 4vh, 26px);
+                left: clamp(18px, 4vw, 36px);
+                font-size: clamp(0.72rem, 1.8vw, 0.95rem);
+                letter-spacing: 2px;
+                padding: 10px 14px;
+            }
+
+            #start-screen-bottom-container {
+                left: clamp(18px, 4vw, 36px);
+                bottom: clamp(16px, 5vh, 32px);
+            }
+
+            #start-screen-framed-content {
+                padding: 14px 22px;
+                margin-bottom: 14px;
+            }
+
+            .menu-title {
+                font-size: clamp(1.25rem, 4vw, 2rem);
+                letter-spacing: 3px;
+            }
+
+            .btn-premium {
+                padding: 12px 32px;
+                font-size: clamp(0.95rem, 2.4vw, 1.2rem);
+            }
+
+            #dashboard {
+                width: 100dvw;
+                height: 100dvh;
+                max-width: none;
+                border-radius: 0;
+                padding: clamp(14px, 3vw, 28px);
+                margin: 0;
+            }
+
+            .dashboard-header {
+                font-size: clamp(1rem, 2.8vw, 1.5rem);
+                margin-bottom: clamp(12px, 3vh, 22px);
+                padding-bottom: 10px;
+            }
+
+            .dashboard-header span:last-child {
+                font-size: clamp(0.65rem, 1.5vw, 0.9rem) !important;
+            }
+
+            .modules-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-rows: repeat(2, minmax(0, 1fr));
+                gap: clamp(10px, 2vw, 18px);
+                height: calc(100dvh - 90px);
+            }
+
+            .module-card {
+                padding: clamp(12px, 2.4vw, 22px);
+                min-height: 0;
+            }
+
+            .module-num {
+                font-size: clamp(0.65rem, 1.5vw, 0.85rem);
+            }
+
+            .module-title {
+                font-size: clamp(0.9rem, 2.3vw, 1.15rem);
+            }
+
+            #music-player-ui {
+                top: 8px;
+                right: 10px;
+                padding: 6px 10px;
+                gap: 10px;
+                transform: scale(0.82);
+                transform-origin: top right;
+            }
+
+            #module-frame {
+                width: 100dvw;
+                height: 100dvh;
+            }
+        }
+
         /* --- Видеоплеер --- */
         #fullscreen-video-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -265,6 +368,28 @@
 <body>
 
     <div id="orientation-lock">Пожалуйста, переверните устройство</div>
+    <script>
+        (function initOrientationLock() {
+            const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const getViewport = () => {
+                const vv = window.visualViewport;
+                return {
+                    width: vv ? vv.width : window.innerWidth,
+                    height: vv ? vv.height : window.innerHeight
+                };
+            };
+            const updateOrientationLock = () => {
+                const viewport = getViewport();
+                document.body.classList.toggle('orientation-locked', isTouchDevice() && viewport.height > viewport.width);
+            };
+
+            window.addEventListener('resize', updateOrientationLock);
+            window.addEventListener('orientationchange', () => setTimeout(updateOrientationLock, 250));
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', updateOrientationLock);
+            updateOrientationLock();
+            document.addEventListener('DOMContentLoaded', updateOrientationLock);
+        })();
+    </script>
 
     <div id="bg-image"></div>
     <div class="grid-bg"></div>
@@ -383,6 +508,7 @@
         let bgMusic = new Audio(playlist[currentTrackIdx]);
         let resumeMusicAfterVideo = false;
         let resumeMusicAfterModuleMedia = false;
+        let moduleGameActive = false;
         let moduleResumeTimer = null;
         bgMusic.volume = BGM_VOLUME; // Громкость снижена на 50%
         bgMusic.muted = !!savedMusicState.muted;
@@ -416,7 +542,7 @@
         }
 
         function startPlaylist() {
-            document.getElementById('music-player-ui').style.display = 'flex';
+            document.getElementById('music-player-ui').style.display = moduleGameActive ? 'none' : 'flex';
             bgMusic.volume = BGM_VOLUME;
             bgMusic.play().catch(e => console.log("Файл музыки не найден в папке"));
             updateTrackNameDisplay();
@@ -445,12 +571,15 @@
 
         function pauseBgMusicForModuleMedia() {
             clearTimeout(moduleResumeTimer);
-            resumeMusicAfterModuleMedia = !bgMusic.paused;
+            if (!bgMusic.paused) {
+                resumeMusicAfterModuleMedia = true;
+            }
             bgMusic.pause();
             saveMusicState();
         }
 
         function resumeBgMusicFromModuleMedia() {
+            if (moduleGameActive) return;
             clearTimeout(moduleResumeTimer);
             moduleResumeTimer = setTimeout(() => {
                 if (resumeMusicAfterModuleMedia) {
@@ -534,10 +663,19 @@
         }
 
         function openModule(moduleId) {
+            const isMobileRuntime = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 900 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (isMobileRuntime) {
+                saveMusicState();
+                window.location.href = `module${moduleId}.html`;
+                return;
+            }
+
             const dashboard = document.getElementById('dashboard');
             const viewer = document.getElementById('module-viewer');
             const frame = document.getElementById('module-frame');
 
+            moduleGameActive = moduleId === 5;
+            document.getElementById('music-player-ui').style.display = moduleGameActive ? 'none' : document.getElementById('music-player-ui').style.display;
             dashboard.style.opacity = '0';
             dashboard.style.transform = 'scale(0.98)';
             setTimeout(() => {
@@ -557,6 +695,7 @@
 
             viewer.style.opacity = '0';
             setTimeout(() => {
+                moduleGameActive = false;
                 frame.src = 'about:blank';
                 viewer.style.display = 'none';
                 dashboard.style.display = 'flex';
@@ -581,6 +720,15 @@
                 pauseBgMusicForModuleMedia();
             }
             if (event.data.type === 'course:bgm-resume') {
+                resumeBgMusicFromModuleMedia();
+            }
+            if (event.data.type === 'course:bgm-game-start') {
+                moduleGameActive = true;
+                document.getElementById('music-player-ui').style.display = 'none';
+                pauseBgMusicForModuleMedia();
+            }
+            if (event.data.type === 'course:bgm-game-end') {
+                moduleGameActive = false;
                 resumeBgMusicFromModuleMedia();
             }
         });
