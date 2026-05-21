@@ -369,6 +369,15 @@
 
     <div id="orientation-lock">Пожалуйста, переверните устройство</div>
     <script>
+        // #region agent log
+        window.agentDebugLog = function(hypothesisId, location, message, data) {
+            fetch('http://127.0.0.1:7395/ingest/fe62f7b7-65c1-46b8-b5d3-7c3b5b3d3f37', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7bb38a' },
+                body: JSON.stringify({ sessionId: '7bb38a', runId: 'initial', hypothesisId, location, message, data, timestamp: Date.now() })
+            }).catch(() => {});
+        };
+        // #endregion
         (function initOrientationLock() {
             const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             const getViewport = () => {
@@ -378,9 +387,25 @@
                     height: vv ? vv.height : window.innerHeight
                 };
             };
+            let lastOrientationLocked = null;
             const updateOrientationLock = () => {
                 const viewport = getViewport();
-                document.body.classList.toggle('orientation-locked', isTouchDevice() && viewport.height > viewport.width);
+                const locked = isTouchDevice() && viewport.height > viewport.width;
+                document.body.classList.toggle('orientation-locked', locked);
+                if (locked !== lastOrientationLocked) {
+                    lastOrientationLocked = locked;
+                    // #region agent log
+                    window.agentDebugLog('H4', 'index.html:initOrientationLock', 'orientation lock state changed', {
+                        locked,
+                        viewport,
+                        innerWidth: window.innerWidth,
+                        innerHeight: window.innerHeight,
+                        screenOrientation: screen.orientation ? screen.orientation.type : null,
+                        pointerCoarse: window.matchMedia('(pointer: coarse)').matches,
+                        userAgent: navigator.userAgent
+                    });
+                    // #endregion
+                }
             };
 
             window.addEventListener('resize', updateOrientationLock);
@@ -664,6 +689,18 @@
 
         function openModule(moduleId) {
             const isMobileRuntime = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 900 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            // #region agent log
+            window.agentDebugLog('H2', 'index.html:openModule', 'module navigation branch selected', {
+                moduleId,
+                isMobileRuntime,
+                pointerCoarse: window.matchMedia('(pointer: coarse)').matches,
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                visualViewport: window.visualViewport ? { width: window.visualViewport.width, height: window.visualViewport.height, scale: window.visualViewport.scale } : null,
+                willUseIframe: !isMobileRuntime,
+                userAgent: navigator.userAgent
+            });
+            // #endregion
             if (isMobileRuntime) {
                 saveMusicState();
                 window.location.href = `module${moduleId}.html`;
@@ -712,6 +749,15 @@
 
         window.addEventListener('message', (event) => {
             if (!event.data || typeof event.data !== 'object') return;
+            // #region agent log
+            window.agentDebugLog('H5', 'index.html:message', 'received module message', {
+                type: event.data.type,
+                moduleGameActive,
+                bgPaused: bgMusic.paused,
+                resumeMusicAfterModuleMedia,
+                musicUiDisplay: document.getElementById('music-player-ui').style.display
+            });
+            // #endregion
 
             if (event.data.type === 'course:close-module') {
                 closeModule();

@@ -327,15 +327,40 @@
 
     <div id="orientation-lock">Пожалуйста, переверните устройство</div>
     <script>
+        // #region agent log
+        window.agentDebugLog = function(hypothesisId, location, message, data) {
+            fetch('http://127.0.0.1:7395/ingest/fe62f7b7-65c1-46b8-b5d3-7c3b5b3d3f37', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7bb38a' },
+                body: JSON.stringify({ sessionId: '7bb38a', runId: 'initial', hypothesisId, location, message, data, timestamp: Date.now() })
+            }).catch(() => {});
+        };
+        // #endregion
         (function initOrientationLock() {
             const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             const getViewport = () => {
                 const vv = window.visualViewport;
                 return { width: vv ? vv.width : window.innerWidth, height: vv ? vv.height : window.innerHeight };
             };
+            let lastOrientationLocked = null;
             const updateOrientationLock = () => {
                 const viewport = getViewport();
-                document.body.classList.toggle('orientation-locked', isTouchDevice() && viewport.height > viewport.width);
+                const locked = isTouchDevice() && viewport.height > viewport.width;
+                document.body.classList.toggle('orientation-locked', locked);
+                if (locked !== lastOrientationLocked) {
+                    lastOrientationLocked = locked;
+                    // #region agent log
+                    window.agentDebugLog('H4', 'module5.html:initOrientationLock', 'orientation lock state changed', {
+                        locked,
+                        viewport,
+                        innerWidth: window.innerWidth,
+                        innerHeight: window.innerHeight,
+                        screenOrientation: screen.orientation ? screen.orientation.type : null,
+                        pointerCoarse: window.matchMedia('(pointer: coarse)').matches,
+                        userAgent: navigator.userAgent
+                    });
+                    // #endregion
+                }
             };
             window.addEventListener('resize', updateOrientationLock);
             window.addEventListener('orientationchange', () => setTimeout(updateOrientationLock, 250));
@@ -507,6 +532,19 @@
             if (IS_EMBEDDED_MODULE) document.body.classList.add('embedded-game');
             bindBgMusicMediaGuards();
             if (!IS_EMBEDDED_MODULE && !bgSavedState.paused) playBgMusic();
+            // #region agent log
+            window.agentDebugLog('H3', 'module5.html:DOMContentLoaded', 'module5 layout snapshot', {
+                isEmbedded: IS_EMBEDDED_MODULE,
+                bodyClass: document.body.className,
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                visualViewport: window.visualViewport ? { width: window.visualViewport.width, height: window.visualViewport.height, scale: window.visualViewport.scale } : null,
+                moduleRect: document.querySelector('.module-container') ? document.querySelector('.module-container').getBoundingClientRect().toJSON() : null,
+                gameRect: document.getElementById('game-area') ? document.getElementById('game-area').getBoundingClientRect().toJSON() : null,
+                computedGameWidth: document.getElementById('game-area') ? getComputedStyle(document.getElementById('game-area')).width : null,
+                computedGameHeight: document.getElementById('game-area') ? getComputedStyle(document.getElementById('game-area')).height : null
+            });
+            // #endregion
             preloadAllGameVideos().catch(error => {
                 preloadPercent.innerText = 'Ошибка загрузки';
                 console.error(error);
@@ -620,8 +658,12 @@
         async function fetchVideoBlob(src) {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+            const startedAt = performance.now();
 
             try {
+                // #region agent log
+                window.agentDebugLog('H1', 'module5.html:fetchVideoBlob', 'video fetch started', { src, timeoutMs: FETCH_TIMEOUT_MS });
+                // #endregion
                 const response = await fetch(src, {
                     cache: 'force-cache',
                     signal: controller.signal
@@ -631,7 +673,27 @@
                     throw new Error(`HTTP ${response.status}`);
                 }
 
-                return await response.blob();
+                const blob = await response.blob();
+                // #region agent log
+                window.agentDebugLog('H1', 'module5.html:fetchVideoBlob', 'video fetch succeeded', {
+                    src,
+                    status: response.status,
+                    type: blob.type,
+                    size: blob.size,
+                    durationMs: Math.round(performance.now() - startedAt)
+                });
+                // #endregion
+                return blob;
+            } catch (error) {
+                // #region agent log
+                window.agentDebugLog('H1', 'module5.html:fetchVideoBlob', 'video fetch failed', {
+                    src,
+                    name: error && error.name ? error.name : null,
+                    message: error && error.message ? error.message : String(error),
+                    durationMs: Math.round(performance.now() - startedAt)
+                });
+                // #endregion
+                throw error;
             } finally {
                 clearTimeout(timeout);
             }
@@ -653,6 +715,13 @@
             preloadPercent.innerText = '0%';
             preloadFile.innerText = 'Подготовка списка файлов...';
             preloadFill.style.width = '0%';
+            // #region agent log
+            window.agentDebugLog('H1', 'module5.html:preloadAllGameVideos', 'preload plan created', {
+                files,
+                fileCount: files.length,
+                existingBlobKeys: Object.keys(videoBlobUrls)
+            });
+            // #endregion
 
             try {
                 await Promise.all(files.map(async (src) => {
@@ -664,6 +733,15 @@
                     const percent = Math.round((loaded / files.length) * 100);
                     preloadPercent.innerText = `${percent}%`;
                     preloadFill.style.width = `${percent}%`;
+                    // #region agent log
+                    window.agentDebugLog('H1', 'module5.html:preloadAllGameVideos', 'preload progress updated', {
+                        src,
+                        loaded,
+                        total: files.length,
+                        percent,
+                        blobKeys: Object.keys(videoBlobUrls)
+                    });
+                    // #endregion
                 }));
             } catch (error) {
                 preloadPercent.innerText = 'Ошибка загрузки';
@@ -700,6 +778,14 @@
         }
 
         function startGame() {
+            // #region agent log
+            window.agentDebugLog('H5', 'module5.html:startGame', 'start game requested', {
+                mediaReady,
+                isEmbedded: IS_EMBEDDED_MODULE,
+                blobKeys: Object.keys(videoBlobUrls),
+                gameRect: gameArea ? gameArea.getBoundingClientRect().toJSON() : null
+            });
+            // #endregion
             if (!mediaReady) return;
             gameSessionActive = true;
             if (IS_EMBEDDED_MODULE && window.parent) {
