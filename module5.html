@@ -120,6 +120,12 @@
 
         #game-video {
             width: 100%; height: 100%; object-fit: cover; display: block;
+            background: #000;
+            opacity: 1;
+            transition: opacity 0.08s ease;
+        }
+        #game-video.video-switching {
+            opacity: 0;
         }
 
         /* UI: Оверлей ожидания */
@@ -148,29 +154,41 @@
         }
         
         .choice-btn {
-            background: transparent; border: none; padding: 12px 24px; cursor: pointer; transition: 0.25s; text-align: center;
-            display: flex; flex-direction: column; align-items: center; min-width: 240px;
-            border-bottom: 1px solid transparent;
+            background: transparent; border: none; padding: 10px 20px; cursor: pointer; transition: 0.3s; text-align: center;
+            display: flex; flex-direction: column; align-items: center; min-width: 280px;
+        }
+
+        .choice-action {
+            font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 500;
+            letter-spacing: 5px; color: #fff; text-transform: uppercase; margin-bottom: 8px;
+            position: relative; padding-bottom: 6px; transition: 0.3s; text-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+        .choice-action::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 140%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.3s;
         }
 
         .choice-text {
             font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
-            color: var(--neon-teal); transition: 0.25s; opacity: 0.85;
-            line-height: 1.45;
+            color: var(--neon-teal); transition: 0.3s; opacity: 0.8;
         }
 
+        .choice-btn:hover .choice-action,
+        .choice-btn.selected .choice-action {
+            color: var(--neon-teal);
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+        }
+        .choice-btn:hover .choice-action::after,
+        .choice-btn.selected .choice-action::after {
+            background: linear-gradient(90deg, transparent, var(--neon-teal), transparent);
+            box-shadow: 0 0 5px var(--neon-teal);
+        }
         .choice-btn:hover .choice-text,
-        .choice-btn:active .choice-text,
         .choice-btn.selected .choice-text {
             opacity: 1;
-            color: #fff;
-            text-shadow: 0 0 12px rgba(0, 243, 255, 0.65);
-        }
-        .choice-btn:hover,
-        .choice-btn:active,
-        .choice-btn.selected {
-            border-bottom-color: var(--neon-teal);
-            box-shadow: 0 4px 18px rgba(0, 243, 255, 0.15);
+            text-shadow: 0 0 8px rgba(0, 243, 255, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -180,26 +198,62 @@
 
         /* UI: QTE Экшен */
         #qte-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: none; justify-content: center; align-items: center; flex-direction: column;
-            background: radial-gradient(circle, transparent 50%, rgba(255, 0, 0, 0.3) 100%); z-index: 45;
+            position: absolute; inset: 0;
+            display: none; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: radial-gradient(circle, transparent 52%, rgba(0, 243, 255, 0.22) 100%);
+            z-index: 45;
+            pointer-events: none;
+        }
+        .qte-center {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 16px;
         }
         .qte-prompt {
-            font-family: 'Rajdhani', sans-serif; font-size: 3rem; color: #fff;
-            text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 20px var(--neon-red);
-            margin-bottom: 20px; animation: pulse 1s infinite; text-align: center;
+            font-family: 'Rajdhani', sans-serif; font-size: clamp(1.4rem, 4vw, 2.4rem); color: var(--neon-teal);
+            text-transform: uppercase; letter-spacing: 4px;
+            text-shadow: 0 0 18px rgba(0, 243, 255, 0.55);
+            text-align: center; animation: qtePulse 1.2s ease-in-out infinite;
         }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        
-        /* Иконка стрелки / SVG */
-        .qte-icon { margin-bottom: 20px; filter: drop-shadow(0 0 15px var(--neon-teal)); }
+        @keyframes qtePulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.04); opacity: 0.92; } }
+
+        .qte-icon { margin-bottom: 4px; filter: drop-shadow(0 0 15px rgba(0, 243, 255, 0.55)); }
+
+        .qte-arrow {
+            width: 72px; height: 72px;
+            border: 2px solid rgba(0, 243, 255, 0.45); border-radius: 50%;
+            background: rgba(3, 4, 7, 0.55);
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.28);
+            backdrop-filter: blur(4px);
+        }
+        .qte-arrow::before {
+            content: ''; display: inline-block;
+            border: solid var(--neon-teal); border-width: 0 4px 4px 0;
+            padding: 11px; opacity: 0.92;
+        }
+        .qte-arrow-up::before { transform: rotate(-135deg); margin-top: 8px; }
+        .qte-arrow-down::before { transform: rotate(45deg); margin-top: -8px; }
+        .qte-arrow-left::before { transform: rotate(135deg); margin-left: 6px; }
+        .qte-arrow-right::before { transform: rotate(-45deg); margin-right: 6px; }
 
         .timer-bar-container {
-            width: 300px; height: 10px; background: rgba(255,255,255,0.2);
-            border-radius: 5px; overflow: hidden;
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(420px, 78%);
+            height: 3px;
+            background: rgba(0, 243, 255, 0.15);
+            border-radius: 2px;
+            overflow: hidden;
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.12);
         }
         .timer-bar {
-            width: 100%; height: 100%; background: var(--neon-red); transform-origin: left;
+            width: 100%; height: 100%;
+            background: var(--neon-teal);
+            box-shadow: 0 0 14px var(--neon-teal);
+            transform-origin: left;
         }
 
         /* UI: ЭКРАН GAME OVER */
@@ -207,13 +261,31 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85); 
             display: none; justify-content: center; align-items: center; flex-direction: column;
-            z-index: 60;
+            z-index: 60; gap: 28px;
         }
         .game-over-text {
-            font-family: 'Rajdhani', sans-serif; font-size: 5rem; font-weight: 700;
+            font-family: 'Rajdhani', sans-serif; font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 700;
             color: var(--neon-teal); text-transform: uppercase; letter-spacing: 12px;
             text-shadow: 0 0 25px rgba(0, 243, 255, 0.6), 0 0 10px rgba(0, 243, 255, 0.8);
             margin: 0; padding: 0;
+        }
+        .game-restart-btn {
+            font-family: 'Rajdhani', sans-serif;
+            padding: 14px 42px;
+            font-size: 1.1rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--neon-teal);
+            background: rgba(0, 243, 255, 0.06);
+            border: 1px solid rgba(0, 243, 255, 0.45);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.25s;
+        }
+        .game-restart-btn:hover {
+            background: var(--neon-teal);
+            color: #030407;
+            box-shadow: 0 0 22px rgba(0, 243, 255, 0.45);
         }
 
         #game-preload-overlay {
@@ -474,17 +546,21 @@
             </div>
 
             <div id="choice-overlay">
-                <div class="choice-btn" onclick="makeChoice('choice1', this)">
+                <div class="choice-btn" data-choice="choice1" onclick="handleChoiceClick('choice1', this)">
+                    <div class="choice-action">САМОУВЕРЕННОСТЬ</div>
                     <div class="choice-text">«Оно бронированное. Я знаю.»</div>
                 </div>
-                <div class="choice-btn" onclick="makeChoice('choice2', this)">
-                    <div class="choice-text">«И кто ты? Я чувствую опасность, что делать?»</div>
+                <div class="choice-btn" data-choice="choice2" onclick="handleChoiceClick('choice2', this)">
+                    <div class="choice-action">ВОПРОС</div>
+                    <div class="choice-text">«Кто ты? Я чувствую опасность, что делать?»</div>
                 </div>
             </div>
 
             <div id="qte-overlay">
-                <div class="qte-icon" id="qte-icon"></div>
-                <div class="qte-prompt" id="qte-text">СВАЙП ВЛЕВО</div>
+                <div class="qte-center">
+                    <div class="qte-icon" id="qte-icon"></div>
+                    <div class="qte-prompt" id="qte-text">СВАЙП ВЛЕВО</div>
+                </div>
                 <div class="timer-bar-container">
                     <div class="timer-bar" id="qte-timer"></div>
                 </div>
@@ -492,6 +568,7 @@
 
             <div id="game-over-overlay">
                 <div class="game-over-text">GAME OVER</div>
+                <button type="button" class="game-restart-btn" onclick="restartGame()">RESTART</button>
             </div>
 
             <div id="game-preload-overlay">
@@ -711,14 +788,27 @@
             }
         };
 
-        // Чистые SVG-иконки для стрелок
-        const svgIcons = {
-            'left': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>',
-            'right': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>',
-            'up': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>',
-            'down': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>',
-            'rotate_ccw': '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>'
+        let pendingChoiceId = null;
+
+        function isCoarsePointer() {
+            return window.matchMedia('(pointer: coarse)').matches;
+        }
+
+        const qteArrowClasses = {
+            left: 'qte-arrow qte-arrow-left',
+            right: 'qte-arrow qte-arrow-right',
+            up: 'qte-arrow qte-arrow-up',
+            down: 'qte-arrow qte-arrow-down'
         };
+
+        function setQteIcon(direction) {
+            if (direction === 'rotate_ccw') {
+                qteIcon.innerHTML = '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>';
+            } else {
+                const cls = qteArrowClasses[direction] || 'qte-arrow qte-arrow-right';
+                qteIcon.innerHTML = `<div class="${cls}"></div>`;
+            }
+        }
 
         const video = document.getElementById('game-video');
         const startOverlay = document.getElementById('start-overlay');
@@ -991,11 +1081,8 @@
 
         function playScene(src) {
             if (!src) return;
-            video.pause();
-            video.currentTime = 0;
-            video.src = getVideoUrl(src);
+            const url = getVideoUrl(src);
             video.playbackRate = 1.0;
-            video.load();
             video.onerror = () => {
                 const fallback = getFailFallbackSrc(src);
                 if (fallback !== src) {
@@ -1003,9 +1090,36 @@
                     playScene(fallback);
                 }
             };
-            video.play().catch(error => {
-                console.error(`Не удалось запустить ${src}`, error);
-            });
+
+            const revealAndPlay = () => {
+                video.classList.remove('video-switching');
+                video.currentTime = 0;
+                video.play().catch(error => {
+                    console.error(`Не удалось запустить ${src}`, error);
+                });
+            };
+
+            if (video.src === url && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                revealAndPlay();
+                return;
+            }
+
+            video.classList.add('video-switching');
+
+            const onReady = () => {
+                revealAndPlay();
+            };
+
+            if (video.src !== url) {
+                video.src = url;
+            }
+
+            if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                onReady();
+            } else {
+                video.addEventListener('loadeddata', onReady, { once: true });
+                video.addEventListener('canplay', onReady, { once: true });
+            }
         }
 
         function startGame() {
@@ -1088,19 +1202,54 @@
             }
 
             if (sceneData.type === 'dialogue') {
+                pendingChoiceId = null;
+                choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
                 choiceOverlay.style.display = 'flex';
             } else if (sceneData.type === 'cinematic' || sceneData.type === 'action') {
                 loadScene(sceneData.next);
             }
         }
 
+        function handleChoiceClick(nextSceneId, btnEl) {
+            if (isCoarsePointer()) {
+                if (pendingChoiceId === nextSceneId) {
+                    makeChoice(nextSceneId, btnEl);
+                    return;
+                }
+                pendingChoiceId = nextSceneId;
+                choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+                if (btnEl) btnEl.classList.add('selected');
+                return;
+            }
+            makeChoice(nextSceneId, btnEl);
+        }
+
         function makeChoice(nextSceneId, btnEl) {
+            pendingChoiceId = null;
             if (btnEl) {
                 choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
                 btnEl.classList.add('selected');
             }
             choiceOverlay.style.display = 'none';
             loadScene(nextSceneId);
+        }
+
+        function restartGame() {
+            gameOverOverlay.style.display = 'none';
+            gameOverTriggered = false;
+            sceneFailed = false;
+            activeQTE = null;
+            clearTimeout(qteTimeout);
+            qteOverlay.style.display = 'none';
+            setQteScrollLock(false);
+            pendingChoiceId = null;
+            choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+            Object.values(gameData).forEach(scene => {
+                if (scene.qtes) scene.qtes.forEach(q => { q.triggered = false; });
+            });
+            if (!gameSessionActive) gameSessionActive = true;
+            startGameBgmPhase(1);
+            loadScene('intro');
         }
 
         function triggerQTE(qteParams) {
@@ -1113,7 +1262,7 @@
 
             qteOverlay.style.display = 'flex';
             qteText.innerText = qteParams.text;
-            qteIcon.innerHTML = svgIcons[qteParams.direction] || '';
+            setQteIcon(qteParams.direction);
 
             qteTimerBar.style.transition = 'none';
             qteTimerBar.style.transform = 'scaleX(1)';
