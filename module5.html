@@ -118,14 +118,29 @@
             box-sizing: border-box;
         }
 
-        #game-video {
+        #game-video,
+        #game-video-b {
+            position: absolute; inset: 0;
             width: 100%; height: 100%; object-fit: cover; display: block;
             background: #000;
-            opacity: 1;
-            transition: opacity 0.08s ease;
-        }
-        #game-video.video-switching {
             opacity: 0;
+            z-index: 1;
+            transition: none;
+        }
+        #game-video.active,
+        #game-video-b.active {
+            opacity: 1;
+            z-index: 2;
+        }
+        #game-video-cover {
+            position: absolute; inset: 0;
+            background: #000;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+        }
+        #game-video-cover.visible {
+            opacity: 1;
         }
 
         /* UI: Оверлей ожидания */
@@ -154,41 +169,55 @@
         }
         
         .choice-btn {
-            background: transparent; border: none; padding: 10px 20px; cursor: pointer; transition: 0.3s; text-align: center;
+            background: transparent; border: none; padding: 10px 20px; cursor: pointer;
+            text-align: center;
             display: flex; flex-direction: column; align-items: center; min-width: 280px;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            box-shadow: none;
+        }
+        .choice-btn:focus,
+        .choice-btn:active,
+        .choice-btn.selected {
+            background: transparent;
+            box-shadow: none;
+            outline: none;
         }
 
         .choice-action {
-            font-family: 'Rajdhani', sans-serif; font-size: 1.1rem; font-weight: 500;
-            letter-spacing: 5px; color: #fff; text-transform: uppercase; margin-bottom: 8px;
-            position: relative; padding-bottom: 6px; transition: 0.3s; text-shadow: 0 0 5px rgba(255,255,255,0.2);
+            font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
+            letter-spacing: 3px; color: rgba(255, 255, 255, 0.82); text-transform: uppercase;
+            margin-bottom: 10px; position: relative; padding-bottom: 8px;
+            transition: color 0.25s, text-shadow 0.25s;
         }
         .choice-action::after {
             content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-            width: 140%; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: 0.3s;
+            width: 120%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+            transition: background 0.25s, box-shadow 0.25s;
         }
 
         .choice-text {
             font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
-            color: var(--neon-teal); transition: 0.3s; opacity: 0.8;
+            color: var(--neon-teal); transition: color 0.25s, opacity 0.25s, text-shadow 0.25s;
+            opacity: 0.78; line-height: 1.45;
         }
 
         .choice-btn:hover .choice-action,
         .choice-btn.selected .choice-action {
             color: var(--neon-teal);
-            text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.45);
         }
         .choice-btn:hover .choice-action::after,
         .choice-btn.selected .choice-action::after {
             background: linear-gradient(90deg, transparent, var(--neon-teal), transparent);
-            box-shadow: 0 0 5px var(--neon-teal);
+            box-shadow: 0 0 8px rgba(0, 243, 255, 0.65);
         }
         .choice-btn:hover .choice-text,
         .choice-btn.selected .choice-text {
             opacity: 1;
-            text-shadow: 0 0 8px rgba(0, 243, 255, 0.4);
+            color: #e2faff;
+            text-shadow: 0 0 6px rgba(0, 243, 255, 0.35);
         }
 
         @media (max-width: 768px) {
@@ -537,7 +566,9 @@
 
         <div class="game-container" id="game-area">
             
-            <video id="game-video" playsinline preload="none"></video>
+            <video id="game-video" class="active" playsinline preload="none"></video>
+            <video id="game-video-b" playsinline preload="none"></video>
+            <div id="game-video-cover"></div>
 
             <button type="button" class="game-fs-btn" id="game-fullscreen-btn" title="На весь экран" aria-label="На весь экран">⛶</button>
 
@@ -683,7 +714,7 @@
 
         function bindBgMusicMediaGuards() {
             document.querySelectorAll('audio, video').forEach(media => {
-                if (media.id === 'game-video') return;
+                if (media.id === 'game-video' || media.id === 'game-video-b') return;
                 media.addEventListener('play', pauseBgMusicForMedia);
                 media.addEventListener('ended', () => setTimeout(resumeBgMusicAfterMedia, 0));
                 media.addEventListener('pause', () => setTimeout(resumeBgMusicAfterMedia, 0));
@@ -810,7 +841,34 @@
             }
         }
 
-        const video = document.getElementById('game-video');
+        const videoA = document.getElementById('game-video');
+        const videoB = document.getElementById('game-video-b');
+        const videoCover = document.getElementById('game-video-cover');
+        let activeVideo = videoA;
+
+        function getActiveVideo() {
+            return activeVideo;
+        }
+
+        function getInactiveVideo() {
+            return activeVideo === videoA ? videoB : videoA;
+        }
+
+        function swapActiveVideo(nextVideo) {
+            if (nextVideo === activeVideo) return;
+            activeVideo.classList.remove('active');
+            activeVideo.pause();
+            nextVideo.classList.add('active');
+            activeVideo = nextVideo;
+        }
+
+        function bindVideoEvents(el) {
+            el.addEventListener('timeupdate', onVideoTimeUpdate);
+            el.addEventListener('ended', onVideoEnded);
+        }
+
+        bindVideoEvents(videoA);
+        bindVideoEvents(videoB);
         const startOverlay = document.getElementById('start-overlay');
         const choiceOverlay = document.getElementById('choice-overlay');
         const qteOverlay = document.getElementById('qte-overlay');
@@ -1082,8 +1140,22 @@
         function playScene(src) {
             if (!src) return;
             const url = getVideoUrl(src);
-            video.playbackRate = 1.0;
-            video.onerror = () => {
+            const target = getInactiveVideo();
+
+            const startOnTarget = () => {
+                target.currentTime = 0;
+                target.playbackRate = 1.0;
+                target.addEventListener('playing', () => {
+                    swapActiveVideo(target);
+                    videoCover.classList.remove('visible');
+                }, { once: true });
+                target.play().catch(error => {
+                    console.error(`Не удалось запустить ${src}`, error);
+                    videoCover.classList.remove('visible');
+                });
+            };
+
+            target.onerror = () => {
                 const fallback = getFailFallbackSrc(src);
                 if (fallback !== src) {
                     console.warn(`[game] Ошибка воспроизведения ${src}, fallback на ${fallback}`);
@@ -1091,34 +1163,32 @@
                 }
             };
 
-            const revealAndPlay = () => {
-                video.classList.remove('video-switching');
-                video.currentTime = 0;
-                video.play().catch(error => {
-                    console.error(`Не удалось запустить ${src}`, error);
-                });
-            };
-
-            if (video.src === url && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                revealAndPlay();
+            if (target.src === url && target.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                startOnTarget();
                 return;
             }
 
-            video.classList.add('video-switching');
-
-            const onReady = () => {
-                revealAndPlay();
-            };
-
-            if (video.src !== url) {
-                video.src = url;
+            if (url.startsWith('blob:')) {
+                target.src = url;
+                if (target.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                    startOnTarget();
+                } else {
+                    target.addEventListener('loadeddata', startOnTarget, { once: true });
+                }
+                return;
             }
 
-            if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                onReady();
-            } else {
-                video.addEventListener('loadeddata', onReady, { once: true });
-                video.addEventListener('canplay', onReady, { once: true });
+            videoCover.classList.add('visible');
+            target.src = url;
+            target.addEventListener('loadeddata', startOnTarget, { once: true });
+        }
+
+        function prefetchVideoSrc(src) {
+            if (!src) return;
+            const url = getVideoUrl(src);
+            const target = getInactiveVideo();
+            if (target.src !== url) {
+                target.src = url;
             }
         }
 
@@ -1159,14 +1229,26 @@
                 return;
             }
 
+            const incomingVideo = getInactiveVideo();
             playScene(sceneData.src);
+
+            if (sceneData.next && gameData[sceneData.next]) {
+                const nextScene = gameData[sceneData.next];
+                if (nextScene.src) {
+                    const nextSrc = nextScene.src;
+                    incomingVideo.addEventListener('playing', () => {
+                        prefetchVideoSrc(nextSrc);
+                    }, { once: true });
+                }
+            }
 
             if (sceneData.qtes) {
                 sceneData.qtes.forEach(q => q.triggered = false);
             }
         }
 
-        video.addEventListener('timeupdate', () => {
+        function onVideoTimeUpdate() {
+            const video = getActiveVideo();
             const sceneData = gameData[currentScene];
             
             if (currentScene === 'fail1' || currentScene === 'fail2' || currentScene === 'fail3') {
@@ -1180,15 +1262,17 @@
             if (!sceneData || sceneData.type !== 'action' || !sceneData.qtes) return;
 
             sceneData.qtes.forEach(qte => {
-                // Если сцена уже провалена, новые QTE не всплывают
                 if (!qte.triggered && !sceneFailed && video.currentTime >= qte.time) {
                     qte.triggered = true;
                     triggerQTE(qte);
                 }
             });
-        });
+        }
 
-        video.addEventListener('ended', handleVideoEnd);
+        function onVideoEnded(e) {
+            if (e.target !== getActiveVideo()) return;
+            handleVideoEnd();
+        }
 
         function handleVideoEnd() {
             const sceneData = gameData[currentScene];
@@ -1247,6 +1331,12 @@
             Object.values(gameData).forEach(scene => {
                 if (scene.qtes) scene.qtes.forEach(q => { q.triggered = false; });
             });
+            videoA.pause();
+            videoB.pause();
+            videoA.classList.add('active');
+            videoB.classList.remove('active');
+            activeVideo = videoA;
+            videoCover.classList.remove('visible');
             if (!gameSessionActive) gameSessionActive = true;
             startGameBgmPhase(1);
             loadScene('intro');
@@ -1254,7 +1344,7 @@
 
         function triggerQTE(qteParams) {
             activeQTE = qteParams;
-            video.playbackRate = 0.2; 
+            getActiveVideo().playbackRate = 0.2; 
             setQteScrollLock(true);
             
             rotationAngleTotal = 0;
@@ -1286,7 +1376,7 @@
                 qteOverlay.style.display = 'none';
                 setQteScrollLock(false);
                 
-                video.playbackRate = 1.0; 
+                getActiveVideo().playbackRate = 1.0; 
                 playSuccessSound();
             } else {
                 triggerFailFlow();
@@ -1299,7 +1389,7 @@
             activeQTE = null;
             qteOverlay.style.display = 'none';
             setQteScrollLock(false);
-            video.playbackRate = 1.0; // Всегда отключаем слоу-мо
+            getActiveVideo().playbackRate = 1.0; // Всегда отключаем слоу-мо
             
             const sceneData = gameData[currentScene];
             
