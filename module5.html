@@ -118,19 +118,11 @@
             box-sizing: border-box;
         }
 
-        #game-video,
-        #game-video-b {
+        #game-video {
             position: absolute; inset: 0;
             width: 100%; height: 100%; object-fit: cover; display: block;
             background: #000;
-            opacity: 0;
             z-index: 1;
-            transition: none;
-        }
-        #game-video.active,
-        #game-video-b.active {
-            opacity: 1;
-            z-index: 2;
         }
         #game-video-cover {
             position: absolute; inset: 0;
@@ -216,8 +208,8 @@
         .choice-btn:hover .choice-text,
         .choice-btn.selected .choice-text {
             opacity: 1;
-            color: #e2faff;
-            text-shadow: 0 0 6px rgba(0, 243, 255, 0.35);
+            color: var(--neon-teal);
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.55);
         }
 
         @media (max-width: 768px) {
@@ -566,8 +558,7 @@
 
         <div class="game-container" id="game-area">
             
-            <video id="game-video" class="active" playsinline preload="none"></video>
-            <video id="game-video-b" playsinline preload="none"></video>
+            <video id="game-video" playsinline preload="auto"></video>
             <div id="game-video-cover"></div>
 
             <button type="button" class="game-fs-btn" id="game-fullscreen-btn" title="На весь экран" aria-label="На весь экран">⛶</button>
@@ -714,7 +705,7 @@
 
         function bindBgMusicMediaGuards() {
             document.querySelectorAll('audio, video').forEach(media => {
-                if (media.id === 'game-video' || media.id === 'game-video-b') return;
+                if (media.id === 'game-video' || media.id === 'game-video-prefetch') return;
                 media.addEventListener('play', pauseBgMusicForMedia);
                 media.addEventListener('ended', () => setTimeout(resumeBgMusicAfterMedia, 0));
                 media.addEventListener('pause', () => setTimeout(resumeBgMusicAfterMedia, 0));
@@ -841,34 +832,41 @@
             }
         }
 
-        const videoA = document.getElementById('game-video');
-        const videoB = document.getElementById('game-video-b');
+        const gameVideo = document.getElementById('game-video');
         const videoCover = document.getElementById('game-video-cover');
-        let activeVideo = videoA;
+        const prefetchVideo = document.createElement('video');
+        prefetchVideo.id = 'game-video-prefetch';
+        prefetchVideo.preload = 'auto';
+        prefetchVideo.muted = true;
+        prefetchVideo.playsInline = true;
+        prefetchVideo.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+        document.getElementById('game-area').appendChild(prefetchVideo);
 
         function getActiveVideo() {
-            return activeVideo;
+            return gameVideo;
         }
 
-        function getInactiveVideo() {
-            return activeVideo === videoA ? videoB : videoA;
+        let coverRevealHandler = null;
+
+        function hideCoverWhenPlaying() {
+            if (coverRevealHandler) {
+                gameVideo.removeEventListener('timeupdate', coverRevealHandler);
+                gameVideo.removeEventListener('playing', coverRevealHandler);
+            }
+            coverRevealHandler = () => {
+                if (gameVideo.currentTime > 0.04) {
+                    videoCover.classList.remove('visible');
+                    gameVideo.removeEventListener('timeupdate', coverRevealHandler);
+                    gameVideo.removeEventListener('playing', coverRevealHandler);
+                    coverRevealHandler = null;
+                }
+            };
+            gameVideo.addEventListener('timeupdate', coverRevealHandler);
+            gameVideo.addEventListener('playing', coverRevealHandler, { once: true });
         }
 
-        function swapActiveVideo(nextVideo) {
-            if (nextVideo === activeVideo) return;
-            activeVideo.classList.remove('active');
-            activeVideo.pause();
-            nextVideo.classList.add('active');
-            activeVideo = nextVideo;
-        }
-
-        function bindVideoEvents(el) {
-            el.addEventListener('timeupdate', onVideoTimeUpdate);
-            el.addEventListener('ended', onVideoEnded);
-        }
-
-        bindVideoEvents(videoA);
-        bindVideoEvents(videoB);
+        gameVideo.addEventListener('timeupdate', onVideoTimeUpdate);
+        gameVideo.addEventListener('ended', onVideoEnded);
         const startOverlay = document.getElementById('start-overlay');
         const choiceOverlay = document.getElementById('choice-overlay');
         const qteOverlay = document.getElementById('qte-overlay');
@@ -1140,22 +1138,19 @@
         function playScene(src) {
             if (!src) return;
             const url = getVideoUrl(src);
-            const target = getInactiveVideo();
 
-            const startOnTarget = () => {
-                target.currentTime = 0;
-                target.playbackRate = 1.0;
-                target.addEventListener('playing', () => {
-                    swapActiveVideo(target);
-                    videoCover.classList.remove('visible');
-                }, { once: true });
-                target.play().catch(error => {
+            const beginPlayback = () => {
+                gameVideo.currentTime = 0;
+                gameVideo.playbackRate = 1.0;
+                videoCover.classList.add('visible');
+                hideCoverWhenPlaying();
+                gameVideo.play().catch(error => {
                     console.error(`Не удалось запустить ${src}`, error);
                     videoCover.classList.remove('visible');
                 });
             };
 
-            target.onerror = () => {
+            gameVideo.onerror = () => {
                 const fallback = getFailFallbackSrc(src);
                 if (fallback !== src) {
                     console.warn(`[game] Ошибка воспроизведения ${src}, fallback на ${fallback}`);
@@ -1163,32 +1158,28 @@
                 }
             };
 
-            if (target.src === url && target.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                startOnTarget();
-                return;
-            }
-
-            if (url.startsWith('blob:')) {
-                target.src = url;
-                if (target.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-                    startOnTarget();
-                } else {
-                    target.addEventListener('loadeddata', startOnTarget, { once: true });
-                }
-                return;
-            }
-
             videoCover.classList.add('visible');
-            target.src = url;
-            target.addEventListener('loadeddata', startOnTarget, { once: true });
+            const sameSrc = gameVideo.currentSrc === url;
+            if (sameSrc && gameVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                beginPlayback();
+                return;
+            }
+
+            gameVideo.src = url;
+            gameVideo.load();
+            if (gameVideo.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+                beginPlayback();
+            } else {
+                gameVideo.addEventListener('canplay', beginPlayback, { once: true });
+            }
         }
 
         function prefetchVideoSrc(src) {
             if (!src) return;
             const url = getVideoUrl(src);
-            const target = getInactiveVideo();
-            if (target.src !== url) {
-                target.src = url;
+            if (prefetchVideo.currentSrc !== url) {
+                prefetchVideo.src = url;
+                prefetchVideo.load();
             }
         }
 
@@ -1229,15 +1220,13 @@
                 return;
             }
 
-            const incomingVideo = getInactiveVideo();
             playScene(sceneData.src);
 
             if (sceneData.next && gameData[sceneData.next]) {
                 const nextScene = gameData[sceneData.next];
                 if (nextScene.src) {
-                    const nextSrc = nextScene.src;
-                    incomingVideo.addEventListener('playing', () => {
-                        prefetchVideoSrc(nextSrc);
+                    gameVideo.addEventListener('playing', () => {
+                        prefetchVideoSrc(nextScene.src);
                     }, { once: true });
                 }
             }
@@ -1269,8 +1258,7 @@
             });
         }
 
-        function onVideoEnded(e) {
-            if (e.target !== getActiveVideo()) return;
+        function onVideoEnded() {
             handleVideoEnd();
         }
 
@@ -1331,11 +1319,7 @@
             Object.values(gameData).forEach(scene => {
                 if (scene.qtes) scene.qtes.forEach(q => { q.triggered = false; });
             });
-            videoA.pause();
-            videoB.pause();
-            videoA.classList.add('active');
-            videoB.classList.remove('active');
-            activeVideo = videoA;
+            gameVideo.pause();
             videoCover.classList.remove('visible');
             if (!gameSessionActive) gameSessionActive = true;
             startGameBgmPhase(1);
