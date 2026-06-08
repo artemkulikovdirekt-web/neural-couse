@@ -29,10 +29,21 @@
         }
 
         #orientation-lock {
-            position: fixed; inset: 0; z-index: 999999; display: none; justify-content: center;
-            align-items: center; padding: 32px; background: #111; color: #00f3ff;
-            font-family: 'Rajdhani', 'Inter', sans-serif; font-size: clamp(1.4rem, 6vw, 3rem);
-            font-weight: 300; text-align: center; text-transform: uppercase; letter-spacing: 3px;
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 32px;
+            background: #111;
+            color: #00f3ff;
+            font-family: 'Rajdhani', 'Inter', sans-serif;
+            font-size: clamp(1.4rem, 6vw, 3rem);
+            font-weight: 300;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 3px;
             text-shadow: 0 0 10px cyan, 0 0 24px rgba(0, 243, 255, 0.45);
         }
         body.orientation-locked #orientation-lock { display: flex; }
@@ -47,14 +58,35 @@
         }
 
         .module-container {
-            width: 100%; max-width: 1100px; padding: max(50px, env(safe-area-inset-top, 0px)) 20px 50px;
-            z-index: 10; box-sizing: border-box;
+            width: 100%;
+            max-width: 1100px;
+            padding: max(50px, env(safe-area-inset-top, 0px)) 20px 50px;
+            z-index: 10;
+            box-sizing: border-box;
         }
 
-        body.embedded-game { display: flex; overflow-x: hidden; overflow-y: auto; }
+        body.embedded-game {
+            display: flex;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
         body.embedded-game .module-container {
-            width: 100%; max-width: 100%; min-height: 100vh;
-            padding: max(16px, env(safe-area-inset-top, 0px)) 12px 16px; box-sizing: border-box; overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
+            min-height: 100vh;
+            padding: max(16px, env(safe-area-inset-top, 0px)) 12px 16px;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+        body.embedded-game .game-container {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto 40px auto;
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-radius: 6px;
+            aspect-ratio: 16/9;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 243, 255, 0.1);
         }
 
         .module-main-title {
@@ -75,20 +107,35 @@
         .loft-text {
             font-weight: 300; line-height: 1.7; color: #cbd5e1; font-size: 1.1rem; margin: 0 0 15px 0;
         }
+        .loft-text:last-child { margin-bottom: 0; }
 
         /* ИГРОВОЙ БЛОК */
         .game-container {
             width: 100%; max-width: 1000px; margin: 0 auto 40px auto;
             background: #000; border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 6px;
             box-shadow: 0 15px 50px rgba(0,0,0,0.8), 0 0 20px rgba(0, 243, 255, 0.1);
-            position: relative; overflow: hidden; aspect-ratio: 16/9; box-sizing: border-box;
+            position: relative; overflow: hidden; aspect-ratio: 16/9;
+            box-sizing: border-box;
         }
-        body.embedded-game .game-container { max-width: 100%; }
 
-        #game-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; background: #000; z-index: 1; }
-        #game-video-cover { position: absolute; inset: 0; background: #000; z-index: 3; pointer-events: none; opacity: 0; transition: opacity 0.2s; }
-        #game-video-cover.visible { opacity: 1; }
+        #game-video {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%; object-fit: cover; display: block;
+            background: #000;
+            z-index: 1;
+        }
+        #game-video-cover {
+            position: absolute; inset: 0;
+            background: #000;
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+        }
+        #game-video-cover.visible {
+            opacity: 1;
+        }
 
+        /* UI: Оверлей ожидания */
         #start-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
@@ -101,153 +148,375 @@
             letter-spacing: 3px; transition: 0.3s;
         }
         .play-game-btn:hover { background: var(--neon-teal); color: #000; box-shadow: 0 0 20px var(--neon-teal); }
-        #start-overlay.locked { pointer-events: none; opacity: 0.35; }
-
-        #review-indicator {
-            position: absolute; top: 20px; right: 20px; font-family: 'Rajdhani', sans-serif;
-            color: var(--neon-teal); font-size: 1.2rem; z-index: 10; opacity: 0;
-            letter-spacing: 2px; pointer-events: none; transition: opacity 0.3s;
-            text-shadow: 0 0 10px rgba(0, 243, 255, 0.8);
+        #start-overlay.locked {
+            pointer-events: none;
+            opacity: 0.35;
         }
-        #review-indicator.active { opacity: 0.8; }
 
+        /* UI: Выбор диалога (ПОЛНОСТЬЮ ИСПРАВЛЕННЫЙ ДИЗАЙН) */
         #choice-overlay {
-            position: absolute; bottom: 12%; left: 0; width: 100%; display: none;
-            flex-direction: row; justify-content: center; gap: 80px; align-items: flex-end; z-index: 40; padding: 0 40px;
+            position: absolute; bottom: 12%; left: 0; width: 100%;
+            display: none; flex-direction: row; justify-content: center; gap: 80px; align-items: flex-end; z-index: 40;
+            padding: 0 40px;
         }
+        
         .choice-btn {
             background: transparent; border: none; padding: 10px 20px; cursor: pointer;
-            text-align: center; display: flex; flex-direction: column; align-items: center; min-width: 280px;
-            -webkit-tap-highlight-color: transparent; outline: none; box-shadow: none;
+            text-align: center;
+            display: flex; flex-direction: column; align-items: center; min-width: 280px;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            box-shadow: none;
         }
+        .choice-btn:focus,
+        .choice-btn:active,
+        .choice-btn.selected {
+            background: transparent;
+            box-shadow: none;
+            outline: none;
+        }
+
         .choice-action {
             font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
             letter-spacing: 3px; color: rgba(255, 255, 255, 0.82); text-transform: uppercase;
-            margin-bottom: 10px; position: relative; padding-bottom: 8px; transition: color 0.25s, text-shadow 0.25s;
+            margin-bottom: 10px; position: relative; padding-bottom: 8px;
+            transition: color 0.25s, text-shadow 0.25s;
         }
         .choice-action::after {
             content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-            width: 120%; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+            width: 120%; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
             transition: background 0.25s, box-shadow 0.25s;
         }
+
         .choice-text {
             font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
-            color: var(--neon-teal); transition: color 0.25s, opacity 0.25s, text-shadow 0.25s; opacity: 0.78; line-height: 1.45;
+            color: var(--neon-teal); transition: color 0.25s, opacity 0.25s, text-shadow 0.25s;
+            opacity: 0.78; line-height: 1.45;
         }
-        .choice-btn:hover .choice-action, .choice-btn.selected .choice-action { color: var(--neon-teal); text-shadow: 0 0 10px rgba(0, 243, 255, 0.45); }
-        .choice-btn:hover .choice-action::after, .choice-btn.selected .choice-action::after { background: linear-gradient(90deg, transparent, var(--neon-teal), transparent); box-shadow: 0 0 8px rgba(0, 243, 255, 0.65); }
-        .choice-btn:hover .choice-text, .choice-btn.selected .choice-text { opacity: 1; color: var(--neon-teal); text-shadow: 0 0 10px rgba(0, 243, 255, 0.55); }
+
+        .choice-btn:hover .choice-action,
+        .choice-btn.selected .choice-action {
+            color: var(--neon-teal);
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.45);
+        }
+        .choice-btn:hover .choice-action::after,
+        .choice-btn.selected .choice-action::after {
+            background: linear-gradient(90deg, transparent, var(--neon-teal), transparent);
+            box-shadow: 0 0 8px rgba(0, 243, 255, 0.65);
+        }
+        .choice-btn:hover .choice-text,
+        .choice-btn.selected .choice-text {
+            opacity: 1;
+            color: var(--neon-teal);
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.55);
+        }
 
         @media (max-width: 768px) {
             #choice-overlay { flex-direction: column; gap: 20px; bottom: 8%; }
             .choice-btn { min-width: 80%; padding: 10px; }
         }
 
+        /* UI: QTE Экшен */
         #qte-overlay {
-            position: absolute; inset: 0; display: none; flex-direction: column;
+            position: absolute; inset: 0;
+            display: none; flex-direction: column;
             justify-content: center; align-items: center;
             background: radial-gradient(circle, transparent 52%, rgba(0, 243, 255, 0.22) 100%);
-            z-index: 45; pointer-events: none;
+            z-index: 45;
+            pointer-events: none;
         }
-        .qte-center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+        .qte-center {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 16px;
+        }
         .qte-prompt {
             font-family: 'Rajdhani', sans-serif; font-size: clamp(1.4rem, 4vw, 2.4rem); color: var(--neon-teal);
-            text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 18px rgba(0, 243, 255, 0.55);
+            text-transform: uppercase; letter-spacing: 4px;
+            text-shadow: 0 0 18px rgba(0, 243, 255, 0.55);
             text-align: center; animation: qtePulse 1.2s ease-in-out infinite;
         }
         @keyframes qtePulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.04); opacity: 0.92; } }
+
         .qte-icon { margin-bottom: 4px; filter: drop-shadow(0 0 15px rgba(0, 243, 255, 0.55)); }
+
         .qte-arrow {
-            width: 72px; height: 72px; border: 2px solid rgba(0, 243, 255, 0.45); border-radius: 50%;
-            background: rgba(3, 4, 7, 0.55); display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.28); backdrop-filter: blur(4px);
+            width: 72px; height: 72px;
+            border: 2px solid rgba(0, 243, 255, 0.45); border-radius: 50%;
+            background: rgba(3, 4, 7, 0.55);
+            display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.28);
+            backdrop-filter: blur(4px);
         }
-        .qte-arrow::before { content: ''; display: inline-block; border: solid var(--neon-teal); border-width: 0 4px 4px 0; padding: 11px; opacity: 0.92; }
+        .qte-arrow::before {
+            content: ''; display: inline-block;
+            border: solid var(--neon-teal); border-width: 0 4px 4px 0;
+            padding: 11px; opacity: 0.92;
+        }
         .qte-arrow-up::before { transform: rotate(-135deg); margin-top: 8px; }
         .qte-arrow-down::before { transform: rotate(45deg); margin-top: -8px; }
         .qte-arrow-left::before { transform: rotate(135deg); margin-left: 6px; }
         .qte-arrow-right::before { transform: rotate(-45deg); margin-right: 6px; }
 
         .timer-bar-container {
-            position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%);
-            width: min(420px, 78%); height: 3px; background: rgba(0, 243, 255, 0.15); border-radius: 2px;
-            overflow: hidden; box-shadow: 0 0 12px rgba(0, 243, 255, 0.12);
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(420px, 78%);
+            height: 3px;
+            background: rgba(0, 243, 255, 0.15);
+            border-radius: 2px;
+            overflow: hidden;
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.12);
         }
-        .timer-bar { width: 100%; height: 100%; background: var(--neon-teal); box-shadow: 0 0 14px var(--neon-teal); transform-origin: left; }
+        .timer-bar {
+            width: 100%; height: 100%;
+            background: var(--neon-teal);
+            box-shadow: 0 0 14px var(--neon-teal);
+            transform-origin: left;
+        }
 
+        /* UI: ЭКРАН GAME OVER */
         #game-over-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85); display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 60; gap: 28px;
+            background: rgba(0, 0, 0, 0.85); 
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 60; gap: 28px;
         }
         .game-over-text {
             font-family: 'Rajdhani', sans-serif; font-size: clamp(2.5rem, 8vw, 5rem); font-weight: 700;
             color: var(--neon-teal); text-transform: uppercase; letter-spacing: 12px;
-            text-shadow: 0 0 25px rgba(0, 243, 255, 0.6), 0 0 10px rgba(0, 243, 255, 0.8); margin: 0; padding: 0;
+            text-shadow: 0 0 25px rgba(0, 243, 255, 0.6), 0 0 10px rgba(0, 243, 255, 0.8);
+            margin: 0; padding: 0;
         }
         .game-restart-btn {
-            font-family: 'Rajdhani', sans-serif; padding: 14px 42px; font-size: 1.1rem; letter-spacing: 4px;
-            text-transform: uppercase; color: var(--neon-teal); background: rgba(0, 243, 255, 0.06);
-            border: 1px solid rgba(0, 243, 255, 0.45); border-radius: 4px; cursor: pointer; transition: 0.25s;
+            font-family: 'Rajdhani', sans-serif;
+            padding: 14px 42px;
+            font-size: 1.1rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--neon-teal);
+            background: rgba(0, 243, 255, 0.06);
+            border: 1px solid rgba(0, 243, 255, 0.45);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.25s;
         }
-        .game-restart-btn:hover { background: var(--neon-teal); color: #030407; box-shadow: 0 0 22px rgba(0, 243, 255, 0.45); }
+        .game-restart-btn:hover {
+            background: var(--neon-teal);
+            color: #030407;
+            box-shadow: 0 0 22px rgba(0, 243, 255, 0.45);
+        }
 
         #game-preload-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #030407;
-            display: none; justify-content: center; align-items: center; flex-direction: column; z-index: 100;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #030407;
+            display: none; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 100;
         }
-        .preload-title { font-family: 'Rajdhani', sans-serif; color: var(--neon-teal); text-transform: uppercase; letter-spacing: 5px; font-size: clamp(1rem, 3vw, 1.6rem); font-weight: 300; text-shadow: 0 0 12px cyan; margin-bottom: 16px; }
-        .preload-percent { font-size: 1rem; color: #cbd5e1; margin-bottom: 18px; }
-        .preload-file { min-height: 1.2em; margin-bottom: 14px; color: #94a3b8; font-family: 'Fira Code', monospace; font-size: 0.82rem; letter-spacing: 1px; }
-        .preload-bar { width: min(420px, 70vw); height: 3px; background: rgba(0, 243, 255, 0.15); overflow: hidden; }
-        .preload-fill { width: 0%; height: 100%; background: var(--neon-teal); box-shadow: 0 0 18px var(--neon-teal); transition: width 0.25s ease; }
-        .preload-retry { display: none; margin-top: 20px; padding: 12px 28px; border: 1px solid rgba(0, 243, 255, 0.45); border-radius: 4px; background: rgba(0, 243, 255, 0.06); color: var(--neon-teal); font-family: 'Rajdhani', sans-serif; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; }
-        .preload-retry:hover { background: var(--neon-teal); color: #030407; box-shadow: 0 0 18px rgba(0, 243, 255, 0.45); }
+        .preload-title {
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--neon-teal);
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            font-size: clamp(1rem, 3vw, 1.6rem);
+            font-weight: 300;
+            text-shadow: 0 0 12px cyan;
+            margin-bottom: 16px;
+        }
+        .preload-percent {
+            font-size: 1rem;
+            color: #cbd5e1;
+            margin-bottom: 18px;
+        }
+        .preload-file {
+            min-height: 1.2em;
+            margin-bottom: 14px;
+            color: #94a3b8;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: none;
+        }
+        .preload-bar {
+            width: min(420px, 70vw);
+            height: 3px;
+            background: rgba(0, 243, 255, 0.15);
+            overflow: hidden;
+        }
+        .preload-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--neon-teal);
+            box-shadow: 0 0 18px var(--neon-teal);
+            transition: width 0.25s ease;
+        }
+        .preload-retry {
+            display: none;
+            margin-top: 20px;
+            padding: 12px 28px;
+            border: 1px solid rgba(0, 243, 255, 0.45);
+            border-radius: 4px;
+            background: rgba(0, 243, 255, 0.06);
+            color: var(--neon-teal);
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            cursor: pointer;
+        }
+        .preload-retry:hover {
+            background: var(--neon-teal);
+            color: #030407;
+            box-shadow: 0 0 18px rgba(0, 243, 255, 0.45);
+        }
+
+        #mobile-debug-panel { display: none !important; }
 
         .game-fs-btn {
-            position: absolute; bottom: 14px; right: 14px; z-index: 55; width: 36px; height: 36px;
-            border: 1px solid rgba(0, 243, 255, 0.45); border-radius: 4px; background: rgba(3, 4, 7, 0.75);
-            color: var(--neon-teal); font-size: 1.1rem; line-height: 1; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: 0.25s; backdrop-filter: blur(6px);
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
+            z-index: 55;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(0, 243, 255, 0.45);
+            border-radius: 4px;
+            background: rgba(3, 4, 7, 0.75);
+            color: var(--neon-teal);
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.25s;
+            backdrop-filter: blur(6px);
         }
-        .game-fs-btn:hover { background: rgba(0, 243, 255, 0.15); box-shadow: 0 0 14px rgba(0, 243, 255, 0.35); }
+        .game-fs-btn:hover {
+            background: rgba(0, 243, 255, 0.15);
+            box-shadow: 0 0 14px rgba(0, 243, 255, 0.35);
+        }
 
         .game-container.game-fullscreen {
-            position: fixed; inset: 0; width: 100dvw !important; height: 100dvh !important;
-            max-width: none !important; margin: 0 !important; z-index: 99999; border-radius: 0; aspect-ratio: unset; border: none;
+            position: fixed;
+            inset: 0;
+            width: 100dvw !important;
+            height: 100dvh !important;
+            max-width: none !important;
+            margin: 0 !important;
+            z-index: 99999;
+            border-radius: 0;
+            aspect-ratio: unset;
+            border: none;
         }
-        body.game-fs-active { overflow: hidden !important; touch-action: none; }
-        body.game-fs-active .module-container { overflow: hidden; }
-        body.game-qte-active { overflow: hidden; touch-action: none; }
-        
-        .module-back-wrap { display: flex; justify-content: center; margin: 10px 0 20px; }
-        .module-back-btn { font-family: 'Rajdhani', sans-serif; text-decoration: none; text-transform: uppercase; letter-spacing: 3px; color: var(--neon-teal); background: rgba(0, 243, 255, 0.06); border: 1px solid rgba(0, 243, 255, 0.35); border-radius: 6px; padding: 16px 46px; transition: all 0.3s ease; box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.04); }
-        .module-back-btn:hover { color: #030407; background: var(--neon-teal); border-color: var(--neon-teal); box-shadow: 0 0 24px rgba(0, 243, 255, 0.45); transform: translateY(-3px); }
+        body.game-fs-active {
+            overflow: hidden !important;
+            touch-action: none;
+        }
+        body.game-fs-active .module-container {
+            overflow: hidden;
+        }
+        body.game-qte-active {
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #mobile-debug-panel-old {
+            position: fixed;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            z-index: 999998;
+            display: none;
+            max-height: 38vh;
+            overflow: auto;
+            padding: 10px;
+            background: rgba(3, 4, 7, 0.92);
+            border: 1px solid rgba(0, 243, 255, 0.35);
+            color: #00f3ff;
+            font-family: 'Fira Code', monospace;
+            font-size: 11px;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            user-select: text;
+        }
 
         @media (max-width: 900px) and (orientation: landscape) {
-            .module-container { max-width: none; width: 100vw; min-height: 100vh; padding: 18px 14px; margin: 0; }
-            .game-container { width: 100%; height: auto; max-width: 100%; margin: 0 auto 22px auto; border-radius: 6px; aspect-ratio: 16/9; }
-            #choice-overlay { bottom: 8%; gap: clamp(16px, 6vw, 80px); padding: 0 24px; }
-            .choice-btn { min-width: 220px; transform: scale(1.15); }
+            .module-container {
+                max-width: none;
+                width: 100vw;
+                min-height: 100vh;
+                padding: 18px 14px;
+                margin: 0;
+            }
+            .game-container {
+                width: 100%;
+                height: auto;
+                max-width: 100%;
+                margin: 0 auto 22px auto;
+                border-radius: 6px;
+                aspect-ratio: 16/9;
+            }
+            #choice-overlay {
+                bottom: 8%;
+                gap: clamp(16px, 6vw, 80px);
+                padding: 0 24px;
+            }
+            .choice-btn {
+                min-width: 220px;
+                transform: scale(1.15);
+            }
+            .play-game-btn {
+                font-size: clamp(1rem, 3vw, 1.5rem);
+                padding: 14px 34px;
+            }
+        }
+
+        .controls-hint {
+            text-align: center; color: var(--text-muted); font-family: 'Fira Code', monospace;
+            font-size: 0.9rem; margin-top: -20px; margin-bottom: 40px; line-height: 1.5;
+        }
+
+        .module-back-wrap {
+            display: flex; justify-content: center; margin: 10px 0 20px;
+        }
+        .module-back-btn {
+            font-family: 'Rajdhani', sans-serif; text-decoration: none; text-transform: uppercase;
+            letter-spacing: 3px; color: var(--neon-teal); background: rgba(0, 243, 255, 0.06);
+            border: 1px solid rgba(0, 243, 255, 0.35); border-radius: 6px; padding: 16px 46px;
+            transition: all 0.3s ease; box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.04);
+        }
+        .module-back-btn:hover {
+            color: #030407; background: var(--neon-teal); border-color: var(--neon-teal);
+            box-shadow: 0 0 24px rgba(0, 243, 255, 0.45); transform: translateY(-3px);
         }
     </style>
 </head>
 <body>
 
     <div id="orientation-lock">Пожалуйста, переверните устройство</div>
-
+    <div id="mobile-debug-panel-old"></div>
     <script>
+        // #region agent log
         window.agentDebugLog = function(hypothesisId, location, message, data) {
             const debugLine = JSON.stringify({ hypothesisId, location, message, data, timestamp: Date.now() });
-            try { localStorage.setItem('module5DebugLast', debugLine); } catch (e) {}
+            try {
+                localStorage.setItem('module5DebugLast', debugLine);
+            } catch (e) {}
             fetch('http://127.0.0.1:7395/ingest/fe62f7b7-65c1-46b8-b5d3-7c3b5b3d3f37', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7bb38a' },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7bb38a' },
                 body: JSON.stringify({ sessionId: '7bb38a', runId: 'initial', hypothesisId, location, message, data, timestamp: Date.now() })
             }).catch(() => {});
         };
-
+        // #endregion
         (function initOrientationLock() {
             const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-            const getViewport = () => { const vv = window.visualViewport; return { width: vv ? vv.width : window.innerWidth, height: vv ? vv.height : window.innerHeight }; };
+            const getViewport = () => {
+                const vv = window.visualViewport;
+                return { width: vv ? vv.width : window.innerWidth, height: vv ? vv.height : window.innerHeight };
+            };
             let lastOrientationLocked = null;
             const updateOrientationLock = () => {
                 const viewport = getViewport();
@@ -255,13 +524,24 @@
                 document.body.classList.toggle('orientation-locked', locked);
                 if (locked !== lastOrientationLocked) {
                     lastOrientationLocked = locked;
-                    window.agentDebugLog('H4', 'module5.html:initOrientationLock', 'orientation lock state changed', { locked, viewport, innerWidth: window.innerWidth, innerHeight: window.innerHeight, screenOrientation: screen.orientation ? screen.orientation.type : null, pointerCoarse: window.matchMedia('(pointer: coarse)').matches, userAgent: navigator.userAgent });
+                    // #region agent log
+                    window.agentDebugLog('H4', 'module5.html:initOrientationLock', 'orientation lock state changed', {
+                        locked,
+                        viewport,
+                        innerWidth: window.innerWidth,
+                        innerHeight: window.innerHeight,
+                        screenOrientation: screen.orientation ? screen.orientation.type : null,
+                        pointerCoarse: window.matchMedia('(pointer: coarse)').matches,
+                        userAgent: navigator.userAgent
+                    });
+                    // #endregion
                 }
             };
             window.addEventListener('resize', updateOrientationLock);
             window.addEventListener('orientationchange', () => setTimeout(updateOrientationLock, 250));
             if (window.visualViewport) window.visualViewport.addEventListener('resize', updateOrientationLock);
-            updateOrientationLock(); document.addEventListener('DOMContentLoaded', updateOrientationLock);
+            updateOrientationLock();
+            document.addEventListener('DOMContentLoaded', updateOrientationLock);
         })();
     </script>
 
@@ -287,10 +567,9 @@
         </div>
 
         <div class="game-container" id="game-area">
+            
             <video id="game-video" playsinline preload="auto"></video>
             <div id="game-video-cover"></div>
-
-            <div id="review-indicator">СТАТУС: ЦЕНТР</div>
 
             <button type="button" class="game-fs-btn" id="game-fullscreen-btn" title="На весь экран" aria-label="На весь экран">⛶</button>
 
@@ -298,7 +577,16 @@
                 <button class="play-game-btn" onclick="startGame()">НАЧАТЬ ИГРУ</button>
             </div>
 
-            <div id="choice-overlay"></div>
+            <div id="choice-overlay">
+                <div class="choice-btn" data-choice="choice1" onclick="handleChoiceClick('choice1', this)">
+                    <div class="choice-action">САМОУВЕРЕННОСТЬ</div>
+                    <div class="choice-text">«Оно бронированное. Я знаю.»</div>
+                </div>
+                <div class="choice-btn" data-choice="choice2" onclick="handleChoiceClick('choice2', this)">
+                    <div class="choice-action">ВОПРОС</div>
+                    <div class="choice-text">«Кто ты? Я чувствую опасность, что делать?»</div>
+                </div>
+            </div>
 
             <div id="qte-overlay">
                 <div class="qte-center">
@@ -319,9 +607,12 @@
                 <div class="preload-title">Загрузка медиа</div>
                 <div class="preload-percent" id="preload-percent">0%</div>
                 <div class="preload-file" id="preload-file"></div>
-                <div class="preload-bar"><div class="preload-fill" id="preload-fill"></div></div>
+                <div class="preload-bar">
+                    <div class="preload-fill" id="preload-fill"></div>
+                </div>
                 <button class="preload-retry" id="preload-retry" onclick="retryGamePreload()">Повторить загрузку</button>
             </div>
+
         </div>
 
         <div class="loft-block">
@@ -329,38 +620,33 @@
             <p class="loft-text">В данном модуле реализован технический прототип FMV-игры, логика которой полностью собрана с помощью инструментов Vibe Coding поверх стандартного веб-плеера.</p>
             <p class="loft-text"><b>Базовые механики:</b>
             <br><br><b>Маршрутизация сюжета (Branching):</b> В контрольных точках (узлах) воспроизведение приостанавливается. Выбор варианта ответа запускает загрузку соответствующего видеофайла, формируя нелинейное повествование.
-            <br><br><b>Система QTE (Quick Time Events):</b> Триггеры, требующие ввода конкретной команды за ограниченное время. При активации QTE скорость воспроизведения автоматически снижается, имитируя эффект Bullet Time.
-            <br><br><b>Состояния провала (Fail States):</b> Игнорирование таймера или неверный ввод команды приводит к маршрутизации на сцену смерти. Система поддерживает мгновенное и отложенное прерывание.</p>
+            <br><br><b>Система QTE (Quick Time Events):</b> Триггеры, требующие ввода конкретной команды за ограниченное время (durationMs). При активации QTE скорость воспроизведения (playbackRate) автоматически снижается до 0.2, имитируя эффект Bullet Time.
+            <br><br><b>Состояния провала (Fail States):</b> Игнорирование таймера или неверный ввод команды приводит к маршрутизации на сцену смерти. Система поддерживает два паттерна: мгновенное прерывание (сцена обрывается сразу) и отложенное прерывание (видео доигрывает текущий кадр до конца перед загрузкой экрана поражения).</p>
             <p class="loft-text"><b>Управление системой:</b>
-            <br><br><b>Десктоп:</b> Регистрация событий клавиатуры. Используйте клавиши со стрелками. Для действия «вращение» и QTE-спама используется клавиша <b>Пробел</b>.
-            <br><br><b>Мобильные устройства:</b> Математический расчет векторов через Touch Events. Система фиксирует начальные и конечные координаты пальца. Для круговых QTE используется расчет угла через Math.atan2(), для спама — быстрые тапы по экрану.</p>
+            <br><br><b>Десктоп:</b> Регистрация событий клавиатуры. Используйте клавиши со стрелками (Влево/Вправо/Вверх/Вниз). Для действия «вращение» используется клавиша «A».
+            <br><br><b>Мобильные устройства:</b> Математический расчет векторов через Touch Events. Система фиксирует начальные (touchstart) и конечные (touchend) координаты пальца, вычисляя направление свайпа. Для круговых QTE используется непрерывный расчет угла между центром экрана и точкой касания через Math.atan2().</p>
         </div>
 
         <div class="module-back-wrap">
             <a class="module-back-btn interactive-btn" href="index.html?fromModule=1" onclick="return goBackToModules()">Вернуться к основным модулям</a>
         </div>
+
     </div>
 
     <script>
-        // ==========================================================
-        // ФОНОВАЯ И ИГРОВАЯ МУЗЫКА
-        // ==========================================================
+        // Фоновая музыка (интеграция из прошлых модулей)
         const BGM_PLAYLIST = ['track1.mp3', 'track2.mp3', 'track3.mp3', 'track4.mp3'];
-        const GAME_BGM_TRACKS = ['m5-game-track1.mp3', 'm5-game-track2.mp3'];
         const BGM_STATE_KEY = 'courseBgMusicState';
         const IS_EMBEDDED_MODULE = new URLSearchParams(window.location.search).get('embedded') === '1';
         const BGM_VOLUME = 0.25;
-        const GAME_BGM_VOLUME = 0.35;
-        
-        const bgSavedState = (() => { try { return JSON.parse(localStorage.getItem(BGM_STATE_KEY)) || {}; } catch (e) { return {}; } })();
+        const bgSavedState = (() => {
+            try { return JSON.parse(localStorage.getItem(BGM_STATE_KEY)) || {}; }
+            catch (e) { return {}; }
+        })();
         let bgTrackIdx = Number.isInteger(bgSavedState.trackIdx) ? bgSavedState.trackIdx : 0;
         let bgMusic = new Audio(BGM_PLAYLIST[bgTrackIdx] || BGM_PLAYLIST[0]);
         let bgResumeAfterMedia = false;
         let gameSessionActive = false;
-
-        let gameBgm = null;
-        let gameBgmPhase = 0;
-        let gameBgmCurrentSrc = '';
 
         bgMusic.volume = BGM_VOLUME;
         bgMusic.muted = !!bgSavedState.muted;
@@ -373,7 +659,9 @@
         function goBackToModules() {
             if (window.stopGameBgm) window.stopGameBgm();
             if (IS_EMBEDDED_MODULE && window.parent) {
-                if (gameSessionActive) window.parent.postMessage({ type: 'course:bgm-game-end' }, '*');
+                if (gameSessionActive) {
+                    window.parent.postMessage({ type: 'course:bgm-game-end' }, '*');
+                }
                 window.parent.postMessage({ type: 'course:module-complete', moduleId: 5 }, '*');
                 window.parent.postMessage({ type: 'course:close-module' }, '*');
                 return false;
@@ -383,35 +671,53 @@
 
         function saveBgMusicState() {
             localStorage.setItem(BGM_STATE_KEY, JSON.stringify({
-                trackIdx: bgTrackIdx, currentTime: bgMusic.currentTime || 0, muted: bgMusic.muted, paused: bgMusic.paused
+                trackIdx: bgTrackIdx,
+                currentTime: bgMusic.currentTime || 0,
+                muted: bgMusic.muted,
+                paused: bgMusic.paused
             }));
         }
 
         function playBgMusic() {
             if (IS_EMBEDDED_MODULE) return;
             bgMusic.volume = BGM_VOLUME;
-            bgMusic.play().catch(() => document.addEventListener('click', playBgMusic, { once: true }));
+            bgMusic.play().catch(() => {
+                document.addEventListener('click', playBgMusic, { once: true });
+            });
         }
 
         function nextBgTrack() {
             bgTrackIdx = (bgTrackIdx + 1) % BGM_PLAYLIST.length;
-            bgMusic.src = BGM_PLAYLIST[bgTrackIdx]; bgMusic.currentTime = 0;
-            playBgMusic(); saveBgMusicState();
+            bgMusic.src = BGM_PLAYLIST[bgTrackIdx];
+            bgMusic.currentTime = 0;
+            playBgMusic();
+            saveBgMusicState();
         }
 
         function pauseBgMusicForMedia() {
-            if (IS_EMBEDDED_MODULE && window.parent) { window.parent.postMessage({ type: 'course:bgm-pause' }, '*'); return; }
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-pause' }, '*');
+                return;
+            }
             if (!bgMusic.paused) bgResumeAfterMedia = true;
-            bgMusic.pause(); saveBgMusicState();
+            bgMusic.pause();
+            saveBgMusicState();
         }
 
-        function hasActiveMedia() { return Array.from(document.querySelectorAll('audio, video')).some(media => !media.paused && !media.ended); }
+        function hasActiveMedia() {
+            return Array.from(document.querySelectorAll('audio, video')).some(media => !media.paused && !media.ended);
+        }
 
         function resumeBgMusicAfterMedia() {
-            if (hasActiveMedia() || gameSessionActive) return;
-            if (IS_EMBEDDED_MODULE && window.parent) { window.parent.postMessage({ type: 'course:bgm-resume' }, '*'); return; }
+            if (hasActiveMedia()) return;
+            if (gameSessionActive) return;
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-resume' }, '*');
+                return;
+            }
             if (bgResumeAfterMedia) playBgMusic();
-            bgResumeAfterMedia = false; saveBgMusicState();
+            bgResumeAfterMedia = false;
+            saveBgMusicState();
         }
 
         function bindBgMusicMediaGuards() {
@@ -425,125 +731,163 @@
 
         bgMusic.addEventListener('ended', nextBgTrack);
         window.addEventListener('beforeunload', saveBgMusicState);
+        document.addEventListener('DOMContentLoaded', () => {
+            if (IS_EMBEDDED_MODULE) document.body.classList.add('embedded-game');
+            bindBgMusicMediaGuards();
+            if (!IS_EMBEDDED_MODULE && !bgSavedState.paused) playBgMusic();
+            // #region agent log
+            window.agentDebugLog('H3', 'module5.html:DOMContentLoaded', 'module5 layout snapshot', {
+                isEmbedded: IS_EMBEDDED_MODULE,
+                bodyClass: document.body.className,
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                visualViewport: window.visualViewport ? { width: window.visualViewport.width, height: window.visualViewport.height, scale: window.visualViewport.scale } : null,
+                moduleRect: document.querySelector('.module-container') ? document.querySelector('.module-container').getBoundingClientRect().toJSON() : null,
+                gameRect: document.getElementById('game-area') ? document.getElementById('game-area').getBoundingClientRect().toJSON() : null,
+                computedGameWidth: document.getElementById('game-area') ? getComputedStyle(document.getElementById('game-area')).width : null,
+                computedGameHeight: document.getElementById('game-area') ? getComputedStyle(document.getElementById('game-area')).height : null
+            });
+            // #endregion
+            preloadAllGameVideos().catch(error => {
+                preloadPercent.innerText = 'Ошибка загрузки';
+                console.error(error);
+            });
+        });
+    </script>
 
-        function initGameBgm() {
-            if (!gameBgm) { gameBgm = new Audio(); gameBgm.volume = GAME_BGM_VOLUME; gameBgm.loop = true; }
-        }
-
-        function startGameBgmPhase(phase) {
-            if (!gameSessionActive) return;
-            initGameBgm();
-            const trackSrc = GAME_BGM_TRACKS[phase - 1];
-            if (!trackSrc) return;
-            if (gameBgmPhase === phase && gameBgmCurrentSrc === trackSrc && !gameBgm.paused) return;
-            gameBgmPhase = phase; gameBgmCurrentSrc = trackSrc;
-            gameBgm.src = trackSrc; gameBgm.currentTime = 0;
-            gameBgm.play().catch(() => {});
-        }
-
-        function stopGameBgm() {
-            if (gameBgm) { gameBgm.pause(); gameBgm.currentTime = 0; }
-            gameBgmPhase = 0; gameBgmCurrentSrc = '';
-        }
-        window.stopGameBgm = stopGameBgm;
-
-        const DIALOGUE_SCENES = new Set(['intro', 'choice1', 'choice2', 'center', 'right', 'left', 'trans_center_to_right', 'trans_right_to_center', 'trans_center_to_left', 'trans_left_to_center']);
-        const ACTION_BGM_SCENES = new Set(['bridge35', 'action1', 'action2', 'action3', 'action4', 'action5', 'fail1', 'fail2', 'fail3', 'fail4', 'fail5']);
-
-        function syncGameBgmForScene(sceneId) {
-            if (!gameSessionActive) return;
-            if (DIALOGUE_SCENES.has(sceneId)) startGameBgmPhase(1);
-            else if (ACTION_BGM_SCENES.has(sceneId)) startGameBgmPhase(2);
-        }
-
+    <script>
         // ==========================================================
-        // БАЗА ДАННЫХ ИГРЫ
+        // БАЗА ДАННЫХ ИГРЫ (МАРШРУТЫ И QTE)
         // ==========================================================
         const gameData = {
             'intro': {
-                src: 'm5-1-intro.mp4', type: 'dialogue',
-                choices: [
-                    { id: 'choice1', text: 'САМОУВЕРЕННОСТЬ', subtext: '«Оно бронированное. Я знаю.»' },
-                    { id: 'choice2', text: 'ВОПРОС', subtext: '«Кто ты? Я чувствую опасность, что делать?»' }
-                ]
+                src: 'm5-1-intro.mp4',
+                type: 'dialogue' 
             },
-            'choice1': { src: 'm5-2-ans1.mp4', type: 'cinematic', next: 'bridge35' },
-            'choice2': { src: 'm5-3-ans2.mp4', type: 'cinematic', next: 'bridge35' },
-            'bridge35': { src: 'm5-3-5.mp4', type: 'cinematic', next: 'action1' },
+            'choice1': {
+                src: 'm5-2-ans1.mp4',
+                type: 'cinematic',
+                next: 'bridge35'
+            },
+            'choice2': {
+                src: 'm5-3-ans2.mp4',
+                type: 'cinematic',
+                next: 'bridge35'
+            },
+            'bridge35': {
+                src: 'm5-3-5.mp4',
+                type: 'cinematic',
+                next: 'action1'
+            },
             'action1': { 
-                src: 'm5-4-invasion.mp4', type: 'action', next: 'action2', failScene: 'fail1', immediateFail: false,
+                src: 'm5-4-invasion.mp4',
+                type: 'action',
+                next: 'action2',
+                failScene: 'fail1', 
+                immediateFail: false, // Фолс = видео доиграет до конца при ошибке
                 qtes: [
                     { time: 2.0, direction: 'up', text: 'ВВЕРХ', durationMs: 1000 },
                     { time: 3.0, direction: 'down', text: 'ВНИЗ', durationMs: 1000 }
                 ]
             },
             'action2': { 
-                src: 'm5-5-door.mp4', type: 'action', next: 'action3', failScene: 'fail2', immediateFail: true,
-                qtes: [{ time: 0.1, direction: 'rotate_ccw', text: 'ПРОБЕЛ: КРУТИТЬ', durationMs: 1000 }]
-            },
-            'action3': { 
-                src: 'm5-6-action.mp4', type: 'action', next: 'action4', failScene: 'fail3', immediateFail: true,
+                src: 'm5-5-door.mp4',
+                type: 'action',
+                next: 'action3',
+                failScene: 'fail2',
+                immediateFail: true, // Тру = моментальная смерть (замедление не висит)
                 qtes: [
-                    { time: 1.0, direction: 'left', text: 'НАЛЕВО', durationMs: 700, failScene: 'fail3' },
-                    { time: 2.0, direction: 'rotate_ccw', text: 'ПРОБЕЛ: КРУТИТЬ', durationMs: 700, failScene: 'fail4' }
+                    { time: 0.1, direction: 'rotate_ccw', text: 'КРУТИ ПРОТИВ ЧАСОВОЙ', durationMs: 1000 }
                 ]
             },
-            'action4': {
-                src: 'm5-7-hatch.mp4', type: 'action', next: 'action5', failScene: 'fail5', immediateFail: true,
+            'action3': { 
+                src: 'm5-6-action.mp4',
+                type: 'action',
+                next: 'win',
+                failScene: 'fail3',
+                immediateFail: true,
                 qtes: [
-                    { time: 1.0, direction: 'right', text: 'ВПРАВО', durationMs: 1000, failScene: 'fail5' },
-                    { time: 5.25, direction: 'spam_tap', text: 'ТАПАЙ ПРОБЕЛ!', durationMs: 750, targetTaps: 6, failScene: 'fail5' }
-                ],
-                pausePoint: { 
-                    time: 5.2, 
-                    choices: [
-                        { id: 'fail5', text: 'КРУТИТЬ НАЛЕВО', subtext: '(Неверный выбор)' },
-                        { id: 'resume', text: 'КРУТИТЬ НАПРАВО', subtext: '(Выбрать этот путь)' }
-                    ]
-                }
+                    { time: 1.5, direction: 'right', text: 'ВПРАВО', durationMs: 1000 }
+                ]
             },
-            'action5': { src: 'm5-8-transit.mp4', type: 'cinematic', next: 'center' },
-            'fail1': { src: 'm5-fail.mp4', type: 'end' },
-            'fail2': { src: 'm5-fail2.mp4', type: 'end' },
-            'fail3': { src: 'm5-fail3.mp4', type: 'end' },
-            'fail4': { src: 'm5-fail4.mp4', type: 'end' },
-            'fail5': { src: 'm5-fail5.mp4', type: 'end' },
-            'win': { src: '', type: 'end' },
-
-            // СИСТЕМА ОБЗОРА
-            'center': { src: 'center_loop.mp4', type: 'review_loop', loop: true },
-            'right':  { src: 'right_loop.mp4', type: 'review_loop', loop: true },
-            'left':   { src: 'turn_left.mp4', type: 'review_loop', loop: false },
-            'trans_center_to_right': { src: 'turn_right.mp4', type: 'review_transit', next: 'right' },
-            'trans_right_to_center': { src: 'turn_center_from_right.mp4', type: 'review_transit', next: 'center' },
-            'trans_center_to_left':  { src: 'turn_left.mp4', type: 'review_transit', next: 'left' },
-            'trans_left_to_center':  { src: 'turn_center_from_left.mp4', type: 'review_transit', next: 'center' }
+            'fail1': { 
+                src: 'm5-fail.mp4',
+                type: 'end'
+            },
+            'fail2': { 
+                src: 'm5-fail2.mp4',
+                type: 'end'
+            },
+            'fail3': {
+                src: 'm5-fail3.mp4',
+                type: 'end'
+            },
+            'win': {
+                src: '', type: 'end' 
+            }
         };
 
         let pendingChoiceId = null;
-        let isReviewTransitioning = false;
-        let currentScene = '';
-        let previousScene = '';
-        let activeQTE = null;
-        let qteTimeout = null;
-        let gameOverTriggered = false; 
-        let sceneFailed = false; 
-        let rotationAngleTotal = 0;
-        let rotationLastAngle = null;
 
-        const qteArrowClasses = { left: 'qte-arrow qte-arrow-left', right: 'qte-arrow qte-arrow-right', up: 'qte-arrow qte-arrow-up', down: 'qte-arrow qte-arrow-down' };
-        
+        function isCoarsePointer() {
+            return window.matchMedia('(pointer: coarse)').matches;
+        }
+
+        const qteArrowClasses = {
+            left: 'qte-arrow qte-arrow-left',
+            right: 'qte-arrow qte-arrow-right',
+            up: 'qte-arrow qte-arrow-up',
+            down: 'qte-arrow qte-arrow-down'
+        };
+
+        function setQteIcon(direction) {
+            if (direction === 'rotate_ccw') {
+                qteIcon.innerHTML = '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>';
+            } else {
+                const cls = qteArrowClasses[direction] || 'qte-arrow qte-arrow-right';
+                qteIcon.innerHTML = `<div class="${cls}"></div>`;
+            }
+        }
+
         const gameVideo = document.getElementById('game-video');
         const videoCover = document.getElementById('game-video-cover');
         const prefetchVideo = document.createElement('video');
-        prefetchVideo.id = 'game-video-prefetch'; prefetchVideo.preload = 'auto'; prefetchVideo.muted = true; prefetchVideo.playsInline = true; prefetchVideo.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+        prefetchVideo.id = 'game-video-prefetch';
+        prefetchVideo.preload = 'auto';
+        prefetchVideo.muted = true;
+        prefetchVideo.playsInline = true;
+        prefetchVideo.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
         document.getElementById('game-area').appendChild(prefetchVideo);
 
+        function getActiveVideo() {
+            return gameVideo;
+        }
+
+        let coverRevealHandler = null;
+
+        function hideCoverWhenPlaying() {
+            if (coverRevealHandler) {
+                gameVideo.removeEventListener('timeupdate', coverRevealHandler);
+                gameVideo.removeEventListener('playing', coverRevealHandler);
+            }
+            coverRevealHandler = () => {
+                if (gameVideo.currentTime > 0.04) {
+                    videoCover.classList.remove('visible');
+                    gameVideo.removeEventListener('timeupdate', coverRevealHandler);
+                    gameVideo.removeEventListener('playing', coverRevealHandler);
+                    coverRevealHandler = null;
+                }
+            };
+            gameVideo.addEventListener('timeupdate', coverRevealHandler);
+            gameVideo.addEventListener('playing', coverRevealHandler, { once: true });
+        }
+
+        gameVideo.addEventListener('timeupdate', onVideoTimeUpdate);
+        gameVideo.addEventListener('ended', onVideoEnded);
         const startOverlay = document.getElementById('start-overlay');
         const choiceOverlay = document.getElementById('choice-overlay');
         const qteOverlay = document.getElementById('qte-overlay');
         const gameOverOverlay = document.getElementById('game-over-overlay');
-        const reviewIndicator = document.getElementById('review-indicator');
         const preloadOverlay = document.getElementById('game-preload-overlay');
         const preloadPercent = document.getElementById('preload-percent');
         const preloadFile = document.getElementById('preload-file');
@@ -554,9 +898,14 @@
         const qteTimerBar = document.getElementById('qte-timer');
         const gameArea = document.getElementById('game-area');
 
-        // ==========================================================
-        // ПРЕЛОАДЕР И УПРАВЛЕНИЕ ВИДЕО (ИСПРАВЛЕННЫЙ)
-        // ==========================================================
+        let currentScene = '';
+        let activeQTE = null;
+        let qteTimeout = null;
+        let gameOverTriggered = false; 
+        let sceneFailed = false; // Флаг отложенного провала
+
+        let rotationAngleTotal = 0;
+        let rotationLastAngle = null;
         const videoBlobUrls = {};
         let mediaReady = false;
         const FETCH_TIMEOUT_MS = 45000;
@@ -567,19 +916,72 @@
         }
 
         async function fetchVideoBlob(src) {
-            const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+            const startedAt = performance.now();
+
             try {
-                const response = await fetch(src, { cache: 'force-cache', signal: controller.signal });
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                return await response.blob();
-            } finally { clearTimeout(timeout); }
+                // #region agent log
+                window.agentDebugLog('H1', 'module5.html:fetchVideoBlob', 'video fetch started', { src, timeoutMs: FETCH_TIMEOUT_MS });
+                // #endregion
+                const response = await fetch(src, {
+                    cache: 'force-cache',
+                    signal: controller.signal
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                // #region agent log
+                window.agentDebugLog('H1', 'module5.html:fetchVideoBlob', 'video fetch succeeded', {
+                    src,
+                    status: response.status,
+                    type: blob.type,
+                    size: blob.size,
+                    durationMs: Math.round(performance.now() - startedAt)
+                });
+                // #endregion
+                return blob;
+            } catch (error) {
+                // #region agent log
+                window.agentDebugLog('H1', 'module5.html:fetchVideoBlob', 'video fetch failed', {
+                    src,
+                    name: error && error.name ? error.name : null,
+                    message: error && error.message ? error.message : String(error),
+                    durationMs: Math.round(performance.now() - startedAt)
+                });
+                // #endregion
+                throw error;
+            } finally {
+                clearTimeout(timeout);
+            }
         }
 
         async function preloadAllGameVideos() {
-            const files = [...new Set(Object.values(gameData).map(scene => scene.src).filter(Boolean))];
-            let loaded = 0; mediaReady = false; revokeGameVideoBlobs();
-            startOverlay.classList.add('locked'); preloadOverlay.style.display = 'flex'; preloadRetry.style.display = 'none';
-            preloadPercent.innerText = '0%'; preloadFile.innerText = 'Подготовка списка файлов...'; preloadFill.style.width = '0%';
+            const files = [...new Set(
+                Object.values(gameData)
+                    .map(scene => scene.src)
+                    .filter(Boolean)
+            )];
+
+            let loaded = 0;
+            mediaReady = false;
+            revokeGameVideoBlobs();
+            startOverlay.classList.add('locked');
+            preloadOverlay.style.display = 'flex';
+            preloadRetry.style.display = 'none';
+            preloadPercent.innerText = '0%';
+            preloadFile.innerText = 'Подготовка списка файлов...';
+            preloadFill.style.width = '0%';
+            // #region agent log
+            window.agentDebugLog('H1', 'module5.html:preloadAllGameVideos', 'preload plan created', {
+                files,
+                fileCount: files.length,
+                existingBlobKeys: Object.keys(videoBlobUrls)
+            });
+            // #endregion
 
             const results = await Promise.allSettled(files.map(async (src) => {
                 preloadFile.innerText = `Загрузка: ${src}`;
@@ -591,293 +993,525 @@
             const failedFiles = [];
             results.forEach((result, index) => {
                 const src = files[index];
-                if (result.status === 'fulfilled') { loaded++; } 
-                else { failedFiles.push({ src, reason: result.reason }); console.error(`[preload] Не удалось загрузить ${src}:`, result.reason); }
+                if (result.status === 'fulfilled') {
+                    loaded++;
+                    // #region agent log
+                    window.agentDebugLog('H1', 'module5.html:preloadAllGameVideos', 'preload progress updated', {
+                        src,
+                        loaded,
+                        total: files.length,
+                        percent: Math.round((loaded / files.length) * 100),
+                        blobKeys: Object.keys(videoBlobUrls)
+                    });
+                    // #endregion
+                } else {
+                    const reason = result.reason && result.reason.message ? result.reason.message : String(result.reason);
+                    failedFiles.push({ src, reason });
+                    console.error(`[preload] Не удалось загрузить ${src}:`, result.reason);
+                }
             });
 
-            preloadPercent.innerText = '100%'; preloadFill.style.width = '100%';
-            
-            // Если мы запускаем локально без сервера, fetch упадет. Делаем обходной путь.
+            preloadPercent.innerText = '100%';
+            preloadFill.style.width = '100%';
+
+            // #region agent log
+            window.agentDebugLog('H1', 'module5.html:preloadAllGameVideos', 'preload finished', {
+                runId: 'post-fix',
+                loaded,
+                failed: failedFiles,
+                total: files.length,
+                blobKeys: Object.keys(videoBlobUrls)
+            });
+            // #endregion
+
             if (loaded === 0) {
-                console.warn('Предзагрузка не удалась (возможно из-за file://). Включаем обходной режим.');
-                preloadPercent.innerText = 'Запуск без кэша...'; preloadFile.innerText = 'Пропуск предзагрузки';
-                setTimeout(() => {
-                    mediaReady = true; preloadOverlay.style.display = 'none'; startOverlay.classList.remove('locked');
-                }, 1000);
-                return; 
+                preloadPercent.innerText = 'Ошибка загрузки';
+                preloadFile.innerText = 'Не удалось загрузить ни одного видео. Проверьте сеть.';
+                preloadRetry.style.display = 'inline-block';
+                startOverlay.classList.add('locked');
+                throw new Error('All video preloads failed');
             }
-            mediaReady = true; preloadOverlay.style.display = 'none'; startOverlay.classList.remove('locked');
+
+            if (failedFiles.length > 0) {
+                console.warn(`[preload] Пропущено файлов: ${failedFiles.length}`, failedFiles);
+                preloadFile.innerText = `Готово (${loaded}/${files.length}). Пропущено: ${failedFiles.map(f => f.src).join(', ')}`;
+            }
+
+            mediaReady = true;
+            preloadOverlay.style.display = 'none';
+            startOverlay.classList.remove('locked');
         }
 
-        function retryGamePreload() { preloadAllGameVideos().catch(error => console.error(error)); }
+        function retryGamePreload() {
+            preloadAllGameVideos().catch(error => console.error(error));
+        }
 
         window.addEventListener('beforeunload', revokeGameVideoBlobs);
 
+        const GAME_BGM_TRACKS = ['m5-game-track1.mp3', 'm5-game-track2.mp3'];
+        const GAME_BGM_VOLUME = 0.35;
+        const DIALOGUE_SCENES = new Set(['intro', 'choice1', 'choice2']);
+        const ACTION_BGM_SCENES = new Set(['bridge35', 'action1', 'action2', 'action3', 'fail1', 'fail2', 'fail3']);
+
+        let gameBgm = null;
+        let gameBgmPhase = 0;
+        let gameBgmCurrentSrc = '';
+
+        function initGameBgm() {
+            if (!gameBgm) {
+                gameBgm = new Audio();
+                gameBgm.volume = GAME_BGM_VOLUME;
+                gameBgm.loop = true;
+            }
+        }
+
+        function startGameBgmPhase(phase) {
+            if (!gameSessionActive) return;
+            initGameBgm();
+            const trackSrc = GAME_BGM_TRACKS[phase - 1];
+            if (!trackSrc) return;
+            if (gameBgmPhase === phase && gameBgmCurrentSrc === trackSrc && !gameBgm.paused) return;
+            gameBgmPhase = phase;
+            gameBgmCurrentSrc = trackSrc;
+            gameBgm.src = trackSrc;
+            gameBgm.currentTime = 0;
+            gameBgm.play().catch(() => {});
+        }
+
+        function stopGameBgm() {
+            if (gameBgm) {
+                gameBgm.pause();
+                gameBgm.currentTime = 0;
+            }
+            gameBgmPhase = 0;
+            gameBgmCurrentSrc = '';
+        }
+        window.stopGameBgm = stopGameBgm;
+
+        function syncGameBgmForScene(sceneId) {
+            if (!gameSessionActive) return;
+            if (DIALOGUE_SCENES.has(sceneId)) {
+                startGameBgmPhase(1);
+            } else if (ACTION_BGM_SCENES.has(sceneId)) {
+                startGameBgmPhase(2);
+            }
+        }
+
+        function getFailFallbackSrc(src) {
+            if (src === 'm5-fail2.mp4' && videoBlobUrls['m5-fail.mp4']) return 'm5-fail.mp4';
+            if (src === 'm5-fail3.mp4' && videoBlobUrls['m5-fail.mp4']) return 'm5-fail.mp4';
+            return src;
+        }
+
         function getVideoUrl(src) {
             if (videoBlobUrls[src]) return videoBlobUrls[src];
-            if (src.startsWith('m5-fail') && videoBlobUrls['m5-fail.mp4']) return videoBlobUrls['m5-fail.mp4'];
+            const fallback = getFailFallbackSrc(src);
+            if (fallback !== src && videoBlobUrls[fallback]) {
+                console.warn(`[game] ${src} недоступен, используется ${fallback}`);
+                return videoBlobUrls[fallback];
+            }
             return src;
+        }
+
+        let gameFullscreenActive = false;
+        const gameFullscreenBtn = document.getElementById('game-fullscreen-btn');
+
+        function setGameFullscreen(active) {
+            gameFullscreenActive = active;
+            gameArea.classList.toggle('game-fullscreen', active);
+            document.body.classList.toggle('game-fs-active', active);
+            gameFullscreenBtn.innerText = active ? '✕' : '⛶';
+            gameFullscreenBtn.title = active ? 'Выйти из полноэкранного режима' : 'На весь экран';
+            gameFullscreenBtn.setAttribute('aria-label', gameFullscreenBtn.title);
+        }
+
+        function toggleGameFullscreen() {
+            if (gameArea.classList.contains('game-fullscreen')) {
+                if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+                setGameFullscreen(false);
+                return;
+            }
+            setGameFullscreen(true);
+            if (gameArea.requestFullscreen) {
+                gameArea.requestFullscreen().catch(() => {});
+            }
+        }
+
+        gameFullscreenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleGameFullscreen();
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && gameFullscreenActive) {
+                setGameFullscreen(false);
+            }
+        });
+
+        function setQteScrollLock(active) {
+            document.body.classList.toggle('game-qte-active', active);
+        }
+
+        function playScene(src) {
+            if (!src) return;
+            const url = getVideoUrl(src);
+
+            const beginPlayback = () => {
+                gameVideo.currentTime = 0;
+                gameVideo.playbackRate = 1.0;
+                videoCover.classList.add('visible');
+                hideCoverWhenPlaying();
+                gameVideo.play().catch(error => {
+                    console.error(`Не удалось запустить ${src}`, error);
+                    videoCover.classList.remove('visible');
+                });
+            };
+
+            gameVideo.onerror = () => {
+                const fallback = getFailFallbackSrc(src);
+                if (fallback !== src) {
+                    console.warn(`[game] Ошибка воспроизведения ${src}, fallback на ${fallback}`);
+                    playScene(fallback);
+                }
+            };
+
+            videoCover.classList.add('visible');
+            const sameSrc = gameVideo.currentSrc === url;
+            if (sameSrc && gameVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                beginPlayback();
+                return;
+            }
+
+            gameVideo.src = url;
+            gameVideo.load();
+            if (gameVideo.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) {
+                beginPlayback();
+            } else {
+                gameVideo.addEventListener('canplay', beginPlayback, { once: true });
+            }
         }
 
         function prefetchVideoSrc(src) {
             if (!src) return;
             const url = getVideoUrl(src);
-            if (prefetchVideo.currentSrc !== url) { prefetchVideo.src = url; prefetchVideo.load(); }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            if (IS_EMBEDDED_MODULE) document.body.classList.add('embedded-game');
-            bindBgMusicMediaGuards();
-            if (!IS_EMBEDDED_MODULE && !bgSavedState.paused) playBgMusic();
-            preloadAllGameVideos().catch(error => console.error(error));
-        });
-
-        // ==========================================================
-        // ИГРОВАЯ ЛОГИКА И QTE
-        // ==========================================================
-        function setQteIcon(direction) {
-            if (direction === 'rotate_ccw') { qteIcon.innerHTML = '<svg viewBox="0 0 24 24" width="80" height="80" stroke="var(--neon-teal)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>'; } 
-            else if (direction === 'spam_tap') { qteIcon.innerHTML = '<svg viewBox="0 0 24 24" width="60" height="60" stroke="var(--neon-teal)" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="4"></circle></svg>'; } 
-            else { qteIcon.innerHTML = `<div class="${qteArrowClasses[direction] || 'qte-arrow qte-arrow-right'}"></div>`; }
-        }
-
-        function toggleGameFullscreen() {
-            if (!document.fullscreenElement) { gameArea.requestFullscreen().catch(err => {}); } 
-            else { document.exitFullscreen(); }
-        }
-        document.getElementById('game-fullscreen-btn').addEventListener('click', toggleGameFullscreen);
-
-        let coverRevealHandler = null;
-        function hideCoverWhenPlaying() {
-            if (coverRevealHandler) { gameVideo.removeEventListener('timeupdate', coverRevealHandler); gameVideo.removeEventListener('playing', coverRevealHandler); }
-            coverRevealHandler = () => {
-                if (gameVideo.currentTime > 0.04) {
-                    videoCover.classList.remove('visible');
-                    gameVideo.removeEventListener('timeupdate', coverRevealHandler); gameVideo.removeEventListener('playing', coverRevealHandler);
-                    coverRevealHandler = null;
-                }
-            };
-            gameVideo.addEventListener('timeupdate', coverRevealHandler); gameVideo.addEventListener('playing', coverRevealHandler, { once: true });
-        }
-
-        function playScene(src, loop = false) {
-            if (!src) return;
-            const url = getVideoUrl(src);
-            const beginPlayback = () => { gameVideo.currentTime = 0; gameVideo.playbackRate = 1.0; videoCover.classList.add('visible'); hideCoverWhenPlaying(); gameVideo.play().catch(e => console.error("Play error:", e)); };
-            gameVideo.loop = loop;
-            videoCover.classList.add('visible');
-            const sameSrc = gameVideo.currentSrc === url;
-            if (sameSrc && gameVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) { beginPlayback(); return; }
-            gameVideo.src = url; gameVideo.load();
-            if (gameVideo.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) { beginPlayback(); } 
-            else { gameVideo.addEventListener('canplay', beginPlayback, { once: true }); }
+            if (prefetchVideo.currentSrc !== url) {
+                prefetchVideo.src = url;
+                prefetchVideo.load();
+            }
         }
 
         function startGame() {
+            // #region agent log
+            window.agentDebugLog('H5', 'module5.html:startGame', 'start game requested', {
+                mediaReady,
+                isEmbedded: IS_EMBEDDED_MODULE,
+                blobKeys: Object.keys(videoBlobUrls),
+                gameRect: gameArea ? gameArea.getBoundingClientRect().toJSON() : null
+            });
+            // #endregion
             if (!mediaReady) return;
             gameSessionActive = true;
-            if (IS_EMBEDDED_MODULE && window.parent) window.parent.postMessage({ type: 'course:bgm-game-start' }, '*');
-            startOverlay.style.display = 'none'; startGameBgmPhase(1); loadScene('intro');
+            if (IS_EMBEDDED_MODULE && window.parent) {
+                window.parent.postMessage({ type: 'course:bgm-game-start' }, '*');
+            }
+            startOverlay.style.display = 'none';
+            startGameBgmPhase(1);
+            loadScene('intro');
         }
 
         function loadScene(sceneId) {
-            previousScene = currentScene; // ИСПРАВЛЕНИЕ: запоминаем предыдущую сцену
-            currentScene = sceneId; 
+            currentScene = sceneId;
             const sceneData = gameData[sceneId];
-            gameOverTriggered = false; sceneFailed = false; isReviewTransitioning = false;
-            gameOverOverlay.style.display = 'none'; choiceOverlay.style.display = 'none'; qteOverlay.style.display = 'none';
-            gameVideo.playbackRate = 1.0;
+            
+            gameOverTriggered = false;
+            sceneFailed = false;
+            gameOverOverlay.style.display = 'none';
+            choiceOverlay.style.display = 'none';
+            qteOverlay.style.display = 'none';
             syncGameBgmForScene(sceneId);
 
-            if (sceneData.type.startsWith('review')) {
-                reviewIndicator.classList.add('active');
-                
-                // ИСПРАВЛЕНИЕ: Проверяем previousScene, чтобы не перезапускать turn_left
-                if (sceneId === 'left' && previousScene === 'trans_center_to_left') { 
-                    reviewIndicator.innerText = `СТАТУС: ЛЕВО (СТОП-КАДР)`; 
-                    return; // Оставляем видео на последнем кадре!
+            if (sceneData.type === 'end') {
+                if (sceneData.src !== '') {
+                    playScene(sceneData.src);
                 }
-                
-                if (sceneData.type === 'review_transit') { isReviewTransitioning = true; reviewIndicator.innerText = `ПЕРЕХОД...`; } 
-                else { reviewIndicator.innerText = `СТАТУС: ${sceneId.toUpperCase()}`; }
-            } else { reviewIndicator.classList.remove('active'); }
+                return;
+            }
 
-            if (sceneData.type === 'end') { if (sceneData.src) playScene(sceneData.src); return; }
-            playScene(sceneData.src, sceneData.loop);
+            playScene(sceneData.src);
 
             if (sceneData.next && gameData[sceneData.next]) {
                 const nextScene = gameData[sceneData.next];
-                if (nextScene.src) gameVideo.addEventListener('playing', () => prefetchVideoSrc(nextScene.src), { once: true });
+                if (nextScene.src) {
+                    gameVideo.addEventListener('playing', () => {
+                        prefetchVideoSrc(nextScene.src);
+                    }, { once: true });
+                }
             }
 
-            if (sceneData.qtes) sceneData.qtes.forEach(q => q.triggered = false);
-            if (sceneData.pausePoint) sceneData.pausePoint.triggered = false;
-        }
-
-        function renderChoices(choices) {
-            choiceOverlay.innerHTML = '';
-            choices.forEach(c => {
-                const btn = document.createElement('div'); btn.className = 'choice-btn';
-                btn.innerHTML = `<div class="choice-action">${c.text}</div><div class="choice-text">${c.subtext}</div>`;
-                btn.onclick = () => makeChoice(c.id, btn); choiceOverlay.appendChild(btn);
-            });
-            choiceOverlay.style.display = 'flex';
+            if (sceneData.qtes) {
+                sceneData.qtes.forEach(q => q.triggered = false);
+            }
         }
 
         function onVideoTimeUpdate() {
-            const video = gameVideo; const sceneData = gameData[currentScene];
-            if (currentScene.startsWith('fail')) {
-                if (video.currentTime >= 2.5 && !gameOverTriggered) { gameOverTriggered = true; gameOverOverlay.style.display = 'flex'; }
+            const video = getActiveVideo();
+            const sceneData = gameData[currentScene];
+            
+            if (currentScene === 'fail1' || currentScene === 'fail2' || currentScene === 'fail3') {
+                if (video.currentTime >= 2.5 && !gameOverTriggered) {
+                    gameOverTriggered = true;
+                    gameOverOverlay.style.display = 'flex'; 
+                }
                 return; 
             }
-            if (!sceneData) return;
-            if (sceneData.pausePoint && !sceneData.pausePoint.triggered && video.currentTime >= sceneData.pausePoint.time) {
-                sceneData.pausePoint.triggered = true; video.pause(); renderChoices(sceneData.pausePoint.choices);
-            }
-            if (sceneData.type === 'action' && sceneData.qtes) {
-                sceneData.qtes.forEach(qte => {
-                    if (!qte.triggered && !sceneFailed && video.currentTime >= qte.time) { qte.triggered = true; triggerQTE(qte); }
-                });
-            }
+
+            if (!sceneData || sceneData.type !== 'action' || !sceneData.qtes) return;
+
+            sceneData.qtes.forEach(qte => {
+                if (!qte.triggered && !sceneFailed && video.currentTime >= qte.time) {
+                    qte.triggered = true;
+                    triggerQTE(qte);
+                }
+            });
         }
 
         function onVideoEnded() {
+            handleVideoEnd();
+        }
+
+        function handleVideoEnd() {
             const sceneData = gameData[currentScene];
             if (!sceneData) return;
-            if (sceneFailed) { const targetFail = sceneData.failScene || 'fail1'; loadScene(targetFail); return; }
-            if (sceneData.type === 'dialogue') { renderChoices(sceneData.choices); } 
-            else if (sceneData.next) { loadScene(sceneData.next); }
+
+            if (sceneFailed) {
+                // Видео доиграло до конца после ошибки, грузим сцену смерти
+                const targetFail = sceneData.failScene ? sceneData.failScene : 'fail';
+                loadScene(targetFail);
+                return;
+            }
+
+            if (sceneData.type === 'dialogue') {
+                pendingChoiceId = null;
+                choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+                choiceOverlay.style.display = 'flex';
+            } else if (sceneData.type === 'cinematic' || sceneData.type === 'action') {
+                loadScene(sceneData.next);
+            }
+        }
+
+        function handleChoiceClick(nextSceneId, btnEl) {
+            if (isCoarsePointer()) {
+                if (pendingChoiceId === nextSceneId) {
+                    makeChoice(nextSceneId, btnEl);
+                    return;
+                }
+                pendingChoiceId = nextSceneId;
+                choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+                if (btnEl) btnEl.classList.add('selected');
+                return;
+            }
+            makeChoice(nextSceneId, btnEl);
         }
 
         function makeChoice(nextSceneId, btnEl) {
+            pendingChoiceId = null;
+            if (btnEl) {
+                choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+                btnEl.classList.add('selected');
+            }
             choiceOverlay.style.display = 'none';
-            if (nextSceneId === 'resume') { gameVideo.play(); } else { loadScene(nextSceneId); }
+            loadScene(nextSceneId);
         }
 
+        // --- ДОБАВЛЕННЫЙ КОД ДЛЯ ЛЮКА ---
+        let pendingHatchId = null;
+        function handleHatchChoice(actionId, btnEl) {
+            if (isCoarsePointer()) {
+                if (pendingHatchId === actionId) {
+                    pendingHatchId = null;
+                    makeChoice(actionId, btnEl);
+                    return;
+                }
+                pendingHatchId = actionId;
+                document.querySelectorAll('.choice-btn, .hatch-btn').forEach(btn => btn.classList.remove('selected'));
+                if (btnEl) btnEl.classList.add('selected');
+                return;
+            }
+            pendingHatchId = null;
+            makeChoice(actionId, btnEl);
+        }
+        // --------------------------------
+
         function restartGame() {
-            gameOverOverlay.style.display = 'none'; gameOverTriggered = false; sceneFailed = false; activeQTE = null; clearTimeout(qteTimeout);
-            qteOverlay.style.display = 'none'; document.body.classList.remove('game-qte-active'); choiceOverlay.style.display = 'none';
-            gameVideo.pause(); videoCover.classList.remove('visible');
+            gameOverOverlay.style.display = 'none';
+            gameOverTriggered = false;
+            sceneFailed = false;
+            activeQTE = null;
+            clearTimeout(qteTimeout);
+            qteOverlay.style.display = 'none';
+            setQteScrollLock(false);
+            pendingChoiceId = null;
+            pendingHatchId = null; // Сбрасываем выбор люка при рестарте
+            choiceOverlay.querySelectorAll('.choice-btn, .hatch-btn').forEach(btn => btn.classList.remove('selected'));
+            Object.values(gameData).forEach(scene => {
+                if (scene.qtes) scene.qtes.forEach(q => { q.triggered = false; });
+            });
+            gameVideo.pause();
+            videoCover.classList.remove('visible');
             if (!gameSessionActive) gameSessionActive = true;
-            startGameBgmPhase(1); loadScene('intro');
+            startGameBgmPhase(1);
+            loadScene('intro');
         }
 
         function triggerQTE(qteParams) {
-            activeQTE = qteParams; gameVideo.playbackRate = qteParams.direction === 'spam_tap' ? 0.05 : 0.2; document.body.classList.add('game-qte-active');
-            rotationAngleTotal = 0; rotationLastAngle = null;
-
-            if (qteParams.direction === 'spam_tap') { qteParams.currentTaps = 0; qteText.innerText = `ТАПАЙ! (0/${qteParams.targetTaps})`; } 
-            else { qteText.innerText = qteParams.text; }
+            activeQTE = qteParams;
+            getActiveVideo().playbackRate = 0.2; 
+            setQteScrollLock(true);
             
-            setQteIcon(qteParams.direction); qteOverlay.style.display = 'flex';
-            qteTimerBar.style.transition = 'none'; qteTimerBar.style.transform = 'scaleX(1)';
-            setTimeout(() => { qteTimerBar.style.transition = `transform ${qteParams.durationMs}ms linear`; qteTimerBar.style.transform = 'scaleX(0)'; }, 50);
+            rotationAngleTotal = 0;
+            rotationLastAngle = null;
 
-            qteTimeout = setTimeout(() => triggerFailFlow(), qteParams.durationMs);
+            qteOverlay.style.display = 'flex';
+            qteText.innerText = qteParams.text;
+            setQteIcon(qteParams.direction);
+
+            qteTimerBar.style.transition = 'none';
+            qteTimerBar.style.transform = 'scaleX(1)';
+            
+            setTimeout(() => {
+                qteTimerBar.style.transition = `transform ${qteParams.durationMs}ms linear`;
+                qteTimerBar.style.transform = 'scaleX(0)';
+            }, 50);
+
+            qteTimeout = setTimeout(() => {
+                triggerFailFlow();
+            }, qteParams.durationMs);
         }
 
         function resolveQTE(playerDirection) {
             if (!activeQTE) return;
-            if (activeQTE.direction === 'spam_tap' && playerDirection === 'spam_tap') {
-                activeQTE.currentTaps++; qteText.innerText = `ТАПАЙ! (${activeQTE.currentTaps}/${activeQTE.targetTaps})`;
-                if (activeQTE.currentTaps >= activeQTE.targetTaps) winQTE();
-            } else if (playerDirection === activeQTE.direction) { winQTE(); } 
-            else if (playerDirection !== 'spam_tap') { triggerFailFlow(); }
+
+            if (playerDirection === activeQTE.direction) {
+                clearTimeout(qteTimeout);
+                activeQTE = null;
+                qteOverlay.style.display = 'none';
+                setQteScrollLock(false);
+                
+                getActiveVideo().playbackRate = 1.0; 
+                playSuccessSound();
+            } else {
+                triggerFailFlow();
+            }
         }
 
-        function winQTE() {
-            clearTimeout(qteTimeout); activeQTE = null; qteOverlay.style.display = 'none'; document.body.classList.remove('game-qte-active');
-            gameVideo.playbackRate = 1.0; playSuccessSound();
-        }
-
+        // Общая логика провала (моментально или отложенно)
         function triggerFailFlow() {
-            clearTimeout(qteTimeout); const specificFail = activeQTE.failScene;
-            activeQTE = null; qteOverlay.style.display = 'none'; document.body.classList.remove('game-qte-active');
-            gameVideo.playbackRate = 1.0; 
+            clearTimeout(qteTimeout);
+            activeQTE = null;
+            qteOverlay.style.display = 'none';
+            setQteScrollLock(false);
+            getActiveVideo().playbackRate = 1.0; // Всегда отключаем слоу-мо
             
-            const sceneData = gameData[currentScene]; const targetFail = specificFail || sceneData.failScene || 'fail1';
-            if (sceneData.immediateFail) { loadScene(targetFail); } 
-            else { sceneFailed = true; sceneData.failScene = targetFail; }
+            const sceneData = gameData[currentScene];
+            
+            if (sceneData.immediateFail) {
+                // Смерть моментальная (например, 5-я сцена с вращением)
+                const targetFail = sceneData.failScene ? sceneData.failScene : 'fail';
+                loadScene(targetFail); 
+            } else {
+                // Смерть отложенная (робот просто добегает кадр до конца)
+                sceneFailed = true;
+            }
         }
 
-        function handleReviewDirection(direction) {
-            if (isReviewTransitioning) return;
-            if (currentScene === 'center') {
-                if (direction === 'right') loadScene('trans_center_to_right');
-                if (direction === 'left')  loadScene('trans_center_to_left');
-            } else if (currentScene === 'right') { if (direction === 'left') loadScene('trans_right_to_center'); } 
-            else if (currentScene === 'left') { if (direction === 'right') loadScene('trans_left_to_center'); }
-        }
-
-        // ИСПРАВЛЕНИЕ УПРАВЛЕНИЯ: Пробел теперь работает и на спам, и на вращение
         window.addEventListener('keydown', (e) => {
-            if (gameData[currentScene]?.type.startsWith('review')) {
-                if (e.key === 'ArrowRight') handleReviewDirection('right');
-                if (e.key === 'ArrowLeft') handleReviewDirection('left');
-                return;
-            }
             if (!activeQTE) return;
-            
-            if (e.code === 'Space') {
-                e.preventDefault(); // Блокируем прокрутку страницы пробелом
-                if (activeQTE.direction === 'spam_tap') resolveQTE('spam_tap');
-                if (activeQTE.direction === 'rotate_ccw') resolveQTE('rotate_ccw');
-                return;
-            }
-
-            if (e.key === 'ArrowLeft') resolveQTE('left'); 
+            if (e.key === 'ArrowLeft') resolveQTE('left');
             if (e.key === 'ArrowRight') resolveQTE('right');
-            if (e.key === 'ArrowUp') resolveQTE('up'); 
+            if (e.key === 'ArrowUp') resolveQTE('up');
             if (e.key === 'ArrowDown') resolveQTE('down');
+            if (e.key === 'a' || e.key === 'A') resolveQTE('rotate_ccw');
         });
 
-        let touchStartX = 0; let touchStartY = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+
         gameArea.addEventListener('touchstart', (e) => {
-            if (activeQTE) { 
-                e.preventDefault(); 
-                if (activeQTE.direction === 'spam_tap') resolveQTE('spam_tap');
-                // Тапы по экрану теперь тоже могут вращать на мобилках, если это удобнее
-                if (activeQTE.direction === 'rotate_ccw') resolveQTE('rotate_ccw');
-            }
-            touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+            if (activeQTE) e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
         }, { passive: false });
 
         gameArea.addEventListener('touchmove', (e) => {
+            if (activeQTE) e.preventDefault();
             if (!activeQTE || activeQTE.direction !== 'rotate_ccw') return;
-            e.preventDefault();
-            let rect = gameArea.getBoundingClientRect(); let centerX = rect.left + rect.width / 2; let centerY = rect.top + rect.height / 2;
-            let touchX = e.touches[0].clientX; let touchY = e.touches[0].clientY;
+
+            let rect = gameArea.getBoundingClientRect();
+            let centerX = rect.left + rect.width / 2;
+            let centerY = rect.top + rect.height / 2;
+
+            let touchX = e.touches[0].clientX;
+            let touchY = e.touches[0].clientY;
+
             let angle = Math.atan2(touchY - centerY, touchX - centerX);
+
             if (rotationLastAngle !== null) {
                 let delta = angle - rotationLastAngle;
-                if (delta > Math.PI) delta -= 2 * Math.PI; if (delta < -Math.PI) delta += 2 * Math.PI;
+                
+                if (delta > Math.PI) delta -= 2 * Math.PI;
+                if (delta < -Math.PI) delta += 2 * Math.PI;
+
                 rotationAngleTotal += delta;
-                if (rotationAngleTotal < -Math.PI) { resolveQTE('rotate_ccw'); rotationLastAngle = null; return; }
+
+                if (rotationAngleTotal < -Math.PI) {
+                    resolveQTE('rotate_ccw');
+                    rotationLastAngle = null;
+                    return;
+                }
             }
             rotationLastAngle = angle;
         }, { passive: false });
 
         gameArea.addEventListener('touchend', (e) => {
-            if (activeQTE && activeQTE.direction !== 'rotate_ccw' && activeQTE.direction !== 'spam_tap') e.preventDefault();
-            let dx = e.changedTouches[0].clientX - touchStartX; let dy = e.changedTouches[0].clientY - touchStartY;
+            if (activeQTE && activeQTE.direction !== 'rotate_ccw') e.preventDefault();
+            if (!activeQTE || activeQTE.direction === 'rotate_ccw') return;
+
+            let touchEndX = e.changedTouches[0].clientX;
+            let touchEndY = e.changedTouches[0].clientY;
+
+            let dx = touchEndX - touchStartX;
+            let dy = touchEndY - touchStartY;
+            
             if (Math.abs(dx) < 40 && Math.abs(dy) < 40) return;
-            if (gameData[currentScene]?.type.startsWith('review')) { if (Math.abs(dx) > Math.abs(dy)) handleReviewDirection(dx > 0 ? 'right' : 'left'); return; }
-            if (!activeQTE || activeQTE.direction === 'rotate_ccw' || activeQTE.direction === 'spam_tap') return;
-            if (Math.abs(dx) > Math.abs(dy)) dx > 0 ? resolveQTE('right') : resolveQTE('left');
-            else dy > 0 ? resolveQTE('down') : resolveQTE('up');
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 0) resolveQTE('right');
+                else resolveQTE('left');
+            } else {
+                if (dy > 0) resolveQTE('down');
+                else resolveQTE('up');
+            }
         }, { passive: false });
+
 
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx;
+
         function playSuccessSound() {
-            if (!audioCtx) audioCtx = new AudioContext(); if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
-            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+            
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
         }
-        gameVideo.addEventListener('timeupdate', onVideoTimeUpdate);
-        gameVideo.addEventListener('ended', onVideoEnded);
     </script>
 </body>
 </html>
