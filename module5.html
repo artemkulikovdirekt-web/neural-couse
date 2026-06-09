@@ -26,6 +26,7 @@
             color: var(--text-main);
             display: flex; justify-content: center; align-items: flex-start;
             overflow-x: hidden; overflow-y: auto;
+            overscroll-behavior: none; /* Запрещает pull-to-refresh, но не блокирует клики */
         }
 
         #orientation-lock {
@@ -99,6 +100,7 @@
             color: var(--neon-teal); font-family: 'Rajdhani', sans-serif; font-size: 1.5rem;
             padding: 15px 40px; border-radius: 4px; cursor: pointer; text-transform: uppercase;
             letter-spacing: 3px; transition: 0.3s;
+            touch-action: manipulation;
         }
         .play-game-btn:hover { background: var(--neon-teal); color: #000; box-shadow: 0 0 20px var(--neon-teal); }
         #start-overlay.locked { pointer-events: none; opacity: 0.35; }
@@ -119,6 +121,7 @@
             background: transparent; border: none; padding: 10px 20px; cursor: pointer;
             text-align: center; display: flex; flex-direction: column; align-items: center; min-width: 280px;
             -webkit-tap-highlight-color: transparent; outline: none; box-shadow: none;
+            touch-action: manipulation;
         }
         .choice-action {
             font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
@@ -188,6 +191,7 @@
             font-family: 'Rajdhani', sans-serif; padding: 14px 42px; font-size: 1.1rem; letter-spacing: 4px;
             text-transform: uppercase; color: var(--neon-teal); background: rgba(0, 243, 255, 0.06);
             border: 1px solid rgba(0, 243, 255, 0.45); border-radius: 4px; cursor: pointer; transition: 0.25s;
+            touch-action: manipulation;
         }
         .game-restart-btn:hover { background: var(--neon-teal); color: #030407; box-shadow: 0 0 22px rgba(0, 243, 255, 0.45); }
 
@@ -200,7 +204,7 @@
         .preload-file { min-height: 1.2em; margin-bottom: 14px; color: #94a3b8; font-family: 'Fira Code', monospace; font-size: 0.82rem; letter-spacing: 1px; }
         .preload-bar { width: min(420px, 70vw); height: 3px; background: rgba(0, 243, 255, 0.15); overflow: hidden; }
         .preload-fill { width: 0%; height: 100%; background: var(--neon-teal); box-shadow: 0 0 18px var(--neon-teal); transition: width 0.25s ease; }
-        .preload-retry { display: none; margin-top: 20px; padding: 12px 28px; border: 1px solid rgba(0, 243, 255, 0.45); border-radius: 4px; background: rgba(0, 243, 255, 0.06); color: var(--neon-teal); font-family: 'Rajdhani', sans-serif; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; }
+        .preload-retry { display: none; margin-top: 20px; padding: 12px 28px; border: 1px solid rgba(0, 243, 255, 0.45); border-radius: 4px; background: rgba(0, 243, 255, 0.06); color: var(--neon-teal); font-family: 'Rajdhani', sans-serif; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; touch-action: manipulation; }
         .preload-retry:hover { background: var(--neon-teal); color: #030407; box-shadow: 0 0 18px rgba(0, 243, 255, 0.45); }
 
         .game-fs-btn {
@@ -208,6 +212,7 @@
             border: 1px solid rgba(0, 243, 255, 0.45); border-radius: 4px; background: rgba(3, 4, 7, 0.75);
             color: var(--neon-teal); font-size: 1.1rem; line-height: 1; cursor: pointer;
             display: flex; align-items: center; justify-content: center; transition: 0.25s; backdrop-filter: blur(6px);
+            touch-action: manipulation;
         }
         .game-fs-btn:hover { background: rgba(0, 243, 255, 0.15); box-shadow: 0 0 14px rgba(0, 243, 255, 0.35); }
 
@@ -215,12 +220,12 @@
             position: fixed; inset: 0; width: 100dvw !important; height: 100dvh !important;
             max-width: none !important; margin: 0 !important; z-index: 99999; border-radius: 0; aspect-ratio: unset; border: none;
         }
-        body.game-fs-active { overflow: hidden !important; touch-action: none; }
-        body.game-fs-active .module-container { overflow: hidden; }
-        body.game-qte-active { overflow: hidden; touch-action: none; }
+        /* ВАЖНО: Убран touch-action: none, чтобы клики в WebView (Telegram) не блокировались */
+        body.game-fs-active { overflow: hidden !important; }
+        body.game-qte-active { overflow: hidden; }
         
         .module-back-wrap { display: flex; justify-content: center; margin: 10px 0 20px; }
-        .module-back-btn { font-family: 'Rajdhani', sans-serif; text-decoration: none; text-transform: uppercase; letter-spacing: 3px; color: var(--neon-teal); background: rgba(0, 243, 255, 0.06); border: 1px solid rgba(0, 243, 255, 0.35); border-radius: 6px; padding: 16px 46px; transition: all 0.3s ease; box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.04); }
+        .module-back-btn { font-family: 'Rajdhani', sans-serif; text-decoration: none; text-transform: uppercase; letter-spacing: 3px; color: var(--neon-teal); background: rgba(0, 243, 255, 0.06); border: 1px solid rgba(0, 243, 255, 0.35); border-radius: 6px; padding: 16px 46px; transition: all 0.3s ease; box-shadow: inset 0 0 12px rgba(0, 243, 255, 0.04); touch-action: manipulation; }
         .module-back-btn:hover { color: #030407; background: var(--neon-teal); border-color: var(--neon-teal); box-shadow: 0 0 24px rgba(0, 243, 255, 0.45); transform: translateY(-3px); }
 
         @media (max-width: 900px) and (orientation: landscape) {
@@ -654,17 +659,29 @@
 
         function toggleGameFullscreen() {
             if (gameArea.classList.contains('game-fullscreen')) {
-                if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+                // Принудительно отключаем CSS-режим в первую очередь
                 setGameFullscreen(false);
+                try {
+                    if (document.fullscreenElement && document.exitFullscreen) {
+                        document.exitFullscreen().catch(() => {});
+                    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    }
+                } catch(e) {}
                 return;
             }
             setGameFullscreen(true);
-            if (gameArea.requestFullscreen) {
-                gameArea.requestFullscreen().catch(() => {});
-            }
+            try {
+                if (gameArea.requestFullscreen) {
+                    gameArea.requestFullscreen().catch(() => {});
+                } else if (gameArea.webkitRequestFullscreen) {
+                    gameArea.webkitRequestFullscreen();
+                }
+            } catch(e) {}
         }
 
         gameFullscreenBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             e.stopPropagation();
             toggleGameFullscreen();
         });
@@ -762,7 +779,14 @@
             choices.forEach(c => {
                 const btn = document.createElement('div'); btn.className = 'choice-btn';
                 btn.innerHTML = `<div class="choice-action">${c.text}</div><div class="choice-text">${c.subtext}</div>`;
-                btn.onclick = () => handleChoiceClick(c.id, btn);
+                
+                // Явный обработчик кликов с блокировкой всплытия для WebView
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleChoiceClick(c.id, btn);
+                };
+                
                 choiceOverlay.appendChild(btn);
             });
             choiceOverlay.style.display = 'flex';
