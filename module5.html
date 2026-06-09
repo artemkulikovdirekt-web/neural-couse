@@ -332,8 +332,8 @@
             <br><br><b>Система QTE (Quick Time Events):</b> Триггеры, требующие ввода конкретной команды за ограниченное время. При активации QTE скорость воспроизведения автоматически снижается, имитируя эффект Bullet Time.
             <br><br><b>Состояния провала (Fail States):</b> Игнорирование таймера или неверный ввод команды приводит к маршрутизации на сцену смерти. Система поддерживает мгновенное и отложенное прерывание.</p>
             <p class="loft-text"><b>Управление системой:</b>
-            <br><br><b>Десктоп:</b> Регистрация событий клавиатуры. Используйте клавиши со стрелками. Для действия «вращение» используется клавиша «A», для QTE-спама — пробел.
-            <br><br><b>Мобильные устройства:</b> Математический расчет векторов через Touch Events. Система фиксирует начальные и конечные координаты пальца. Для круговых QTE используется расчет угла через Math.atan2(), для спама — быстрые тапы.</p>
+            <br><br><b>Десктоп:</b> Регистрация событий клавиатуры. Используйте клавиши со стрелками. Для действия «вращение» и QTE-спама используется клавиша <b>Пробел</b>.
+            <br><br><b>Мобильные устройства:</b> Математический расчет векторов через Touch Events. Система фиксирует начальные и конечные координаты пальца. Для круговых QTE используется расчет угла через Math.atan2(), для спама — быстрые тапы по экрану. В диалогах и паузах для мобильных устройств работает логика двойного касания (первый тап выделяет выбор, второй — подтверждает).</p>
         </div>
 
         <div class="module-back-wrap">
@@ -457,7 +457,7 @@
         }
 
         // ==========================================================
-        // БАЗА ДАННЫХ ИГРЫ (ОБЪЕДИНЕННАЯ)
+        // БАЗА ДАННЫХ ИГРЫ
         // ==========================================================
         const gameData = {
             'intro': {
@@ -479,20 +479,20 @@
             },
             'action2': { 
                 src: 'm5-5-door.mp4', type: 'action', next: 'action3', failScene: 'fail2', immediateFail: true,
-                qtes: [{ time: 0.1, direction: 'rotate_ccw', text: 'КРУТИ ПРОТИВ ЧАСОВОЙ', durationMs: 1000 }]
+                qtes: [{ time: 0.1, direction: 'rotate_ccw', text: 'ПРОБЕЛ: КРУТИТЬ', durationMs: 1000 }]
             },
             'action3': { 
                 src: 'm5-6-action.mp4', type: 'action', next: 'action4', failScene: 'fail3', immediateFail: true,
                 qtes: [
                     { time: 1.0, direction: 'left', text: 'НАЛЕВО', durationMs: 700, failScene: 'fail3' },
-                    { time: 2.0, direction: 'rotate_ccw', text: 'КРУТИТЬ НАЛЕВО', durationMs: 700, failScene: 'fail4' }
+                    { time: 2.0, direction: 'rotate_ccw', text: 'ПРОБЕЛ: КРУТИТЬ', durationMs: 700, failScene: 'fail4' }
                 ]
             },
             'action4': {
                 src: 'm5-7-hatch.mp4', type: 'action', next: 'action5', failScene: 'fail5', immediateFail: true,
                 qtes: [
                     { time: 1.0, direction: 'right', text: 'ВПРАВО', durationMs: 1000, failScene: 'fail5' },
-                    { time: 5.25, direction: 'spam_tap', text: 'ТАПАЙ!', durationMs: 750, targetTaps: 6, failScene: 'fail5' }
+                    { time: 5.25, direction: 'spam_tap', text: 'ТАПАЙ ПРОБЕЛ!', durationMs: 750, targetTaps: 6, failScene: 'fail5' }
                 ],
                 pausePoint: { 
                     time: 5.2, 
@@ -523,6 +523,7 @@
         let pendingChoiceId = null;
         let isReviewTransitioning = false;
         let currentScene = '';
+        let previousScene = '';
         let activeQTE = null;
         let qteTimeout = null;
         let gameOverTriggered = false; 
@@ -595,9 +596,14 @@
             });
 
             preloadPercent.innerText = '100%'; preloadFill.style.width = '100%';
+            
             if (loaded === 0) {
-                preloadPercent.innerText = 'Ошибка загрузки'; preloadFile.innerText = 'Не удалось загрузить ни одного видео. Проверьте сеть.';
-                preloadRetry.style.display = 'inline-block'; startOverlay.classList.add('locked'); throw new Error('All video preloads failed');
+                console.warn('Предзагрузка не удалась (возможно из-за file://). Включаем обходной режим.');
+                preloadPercent.innerText = 'Запуск без кэша...'; preloadFile.innerText = 'Пропуск предзагрузки';
+                setTimeout(() => {
+                    mediaReady = true; preloadOverlay.style.display = 'none'; startOverlay.classList.remove('locked');
+                }, 1000);
+                return; 
             }
             mediaReady = true; preloadOverlay.style.display = 'none'; startOverlay.classList.remove('locked');
         }
@@ -608,7 +614,6 @@
 
         function getVideoUrl(src) {
             if (videoBlobUrls[src]) return videoBlobUrls[src];
-            // Логика фоллбека для смертей, если нужного файла нет
             if (src.startsWith('m5-fail') && videoBlobUrls['m5-fail.mp4']) return videoBlobUrls['m5-fail.mp4'];
             return src;
         }
@@ -635,11 +640,40 @@
             else { qteIcon.innerHTML = `<div class="${qteArrowClasses[direction] || 'qte-arrow qte-arrow-right'}"></div>`; }
         }
 
-        function toggleGameFullscreen() {
-            if (!document.fullscreenElement) { gameArea.requestFullscreen().catch(err => {}); } 
-            else { document.exitFullscreen(); }
+        let gameFullscreenActive = false;
+        const gameFullscreenBtn = document.getElementById('game-fullscreen-btn');
+
+        function setGameFullscreen(active) {
+            gameFullscreenActive = active;
+            gameArea.classList.toggle('game-fullscreen', active);
+            document.body.classList.toggle('game-fs-active', active);
+            gameFullscreenBtn.innerText = active ? '✕' : '⛶';
+            gameFullscreenBtn.title = active ? 'Выйти из полноэкранного режима' : 'На весь экран';
+            gameFullscreenBtn.setAttribute('aria-label', gameFullscreenBtn.title);
         }
-        document.getElementById('game-fullscreen-btn').addEventListener('click', toggleGameFullscreen);
+
+        function toggleGameFullscreen() {
+            if (gameArea.classList.contains('game-fullscreen')) {
+                if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+                setGameFullscreen(false);
+                return;
+            }
+            setGameFullscreen(true);
+            if (gameArea.requestFullscreen) {
+                gameArea.requestFullscreen().catch(() => {});
+            }
+        }
+
+        gameFullscreenBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleGameFullscreen();
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && gameFullscreenActive) {
+                setGameFullscreen(false);
+            }
+        });
 
         let coverRevealHandler = null;
         function hideCoverWhenPlaying() {
@@ -675,7 +709,9 @@
         }
 
         function loadScene(sceneId) {
-            currentScene = sceneId; const sceneData = gameData[sceneId];
+            previousScene = currentScene;
+            currentScene = sceneId; 
+            const sceneData = gameData[sceneId];
             gameOverTriggered = false; sceneFailed = false; isReviewTransitioning = false;
             gameOverOverlay.style.display = 'none'; choiceOverlay.style.display = 'none'; qteOverlay.style.display = 'none';
             gameVideo.playbackRate = 1.0;
@@ -683,7 +719,10 @@
 
             if (sceneData.type.startsWith('review')) {
                 reviewIndicator.classList.add('active');
-                if (sceneId === 'left' && currentScene === 'trans_center_to_left') { reviewIndicator.innerText = `СТАТУС: ЛЕВО (СТОП-КАДР)`; return; }
+                if (sceneId === 'left' && previousScene === 'trans_center_to_left') { 
+                    reviewIndicator.innerText = `СТАТУС: ЛЕВО (СТОП-КАДР)`; 
+                    return; 
+                }
                 if (sceneData.type === 'review_transit') { isReviewTransitioning = true; reviewIndicator.innerText = `ПЕРЕХОД...`; } 
                 else { reviewIndicator.innerText = `СТАТУС: ${sceneId.toUpperCase()}`; }
             } else { reviewIndicator.classList.remove('active'); }
@@ -700,12 +739,31 @@
             if (sceneData.pausePoint) sceneData.pausePoint.triggered = false;
         }
 
+        function isCoarsePointer() {
+            return window.matchMedia('(pointer: coarse)').matches;
+        }
+
+        function handleChoiceClick(nextSceneId, btnEl) {
+            if (isCoarsePointer()) {
+                if (pendingChoiceId === nextSceneId) {
+                    makeChoice(nextSceneId, btnEl);
+                    return;
+                }
+                pendingChoiceId = nextSceneId;
+                choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+                if (btnEl) btnEl.classList.add('selected');
+                return;
+            }
+            makeChoice(nextSceneId, btnEl);
+        }
+
         function renderChoices(choices) {
             choiceOverlay.innerHTML = '';
             choices.forEach(c => {
                 const btn = document.createElement('div'); btn.className = 'choice-btn';
                 btn.innerHTML = `<div class="choice-action">${c.text}</div><div class="choice-text">${c.subtext}</div>`;
-                btn.onclick = () => makeChoice(c.id, btn); choiceOverlay.appendChild(btn);
+                btn.onclick = () => handleChoiceClick(c.id, btn);
+                choiceOverlay.appendChild(btn);
             });
             choiceOverlay.style.display = 'flex';
         }
@@ -736,6 +794,11 @@
         }
 
         function makeChoice(nextSceneId, btnEl) {
+            pendingChoiceId = null;
+            if (btnEl) {
+                choiceOverlay.querySelectorAll('.choice-btn').forEach(btn => btn.classList.remove('selected'));
+                btnEl.classList.add('selected');
+            }
             choiceOverlay.style.display = 'none';
             if (nextSceneId === 'resume') { gameVideo.play(); } else { loadScene(nextSceneId); }
         }
@@ -802,15 +865,27 @@
                 return;
             }
             if (!activeQTE) return;
-            if (activeQTE.direction === 'spam_tap' && e.key === ' ') { resolveQTE('spam_tap'); return; }
-            if (e.key === 'ArrowLeft') resolveQTE('left'); if (e.key === 'ArrowRight') resolveQTE('right');
-            if (e.key === 'ArrowUp') resolveQTE('up'); if (e.key === 'ArrowDown') resolveQTE('down');
-            if (e.key === 'a' || e.key === 'A') resolveQTE('rotate_ccw');
+            
+            if (e.code === 'Space') {
+                e.preventDefault(); 
+                if (activeQTE.direction === 'spam_tap') resolveQTE('spam_tap');
+                if (activeQTE.direction === 'rotate_ccw') resolveQTE('rotate_ccw');
+                return;
+            }
+
+            if (e.key === 'ArrowLeft') resolveQTE('left'); 
+            if (e.key === 'ArrowRight') resolveQTE('right');
+            if (e.key === 'ArrowUp') resolveQTE('up'); 
+            if (e.key === 'ArrowDown') resolveQTE('down');
         });
 
         let touchStartX = 0; let touchStartY = 0;
         gameArea.addEventListener('touchstart', (e) => {
-            if (activeQTE) { e.preventDefault(); if (activeQTE.direction === 'spam_tap') resolveQTE('spam_tap'); }
+            if (activeQTE) { 
+                e.preventDefault(); 
+                if (activeQTE.direction === 'spam_tap') resolveQTE('spam_tap');
+                if (activeQTE.direction === 'rotate_ccw') resolveQTE('rotate_ccw');
+            }
             touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
         }, { passive: false });
 
